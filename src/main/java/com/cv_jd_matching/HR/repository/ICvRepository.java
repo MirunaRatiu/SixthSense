@@ -9,4 +9,5 @@ public interface ICvRepository extends CrudRepository<Cv, Integer> {
     default int countAll() {
         return Math.toIntExact(count());
     }
+
 }

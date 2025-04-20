@@ -19,6 +19,7 @@ public class FileUploadController {
 
     @PostMapping("/upload-cv")
     @ResponseBody
+
     public String uploadCv(@RequestParam("file") MultipartFile file) {
         try {
             String uploadedCvUrl = blobServiceClient.uploadCv(file);
