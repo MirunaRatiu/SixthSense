@@ -1,0 +1,90 @@
+<task>
+    <name>CV Parsing Task</name>
+    <description>
+        Extract structured information from a CV, including sections such as the name, technical skills, foreign languages, education, certifications, project experience, and any unknown sections (categorized under "others").
+        The system should handle different text formats (plain, OCR, styled) and take advantage of formatting (e.g., font size, bold, capitalization) to detect section titles more accurately.
+        The system must differentiate between section-specific content (e.g., technical skills, education) and other general text (e.g., contact details, hobbies, etc.).
+    </description>
+    <steps>
+        <step>
+            <name>Extract Name</name>
+            <description>
+                Scan through the CV for a line containing the person's full name. The name should contain at least two words, each starting with a capital letter.
+                Use regex to validate the name. Consider that names may appear in larger or bold fonts, especially at the top of the document.
+            </description>
+        </step>
+        <step>
+            <name>Process Known Sections</name>
+            <description>
+                Identify the following known sections using both synonym matching and formatting cues (e.g., larger fonts, bold, all caps for section headers):
+
+                - Technical Skills (technical_skills): ["technical skills", "skills", "technical", "abilități"]
+                - Foreign Languages (foreign_languages): ["foreign languages", "languages", "limbi străine", "limbi"]
+                - Education (education): ["education", "educație", "qualifications", "studii"]
+                - Certifications (certifications): ["certifications", "certificări"]
+                - Project Experience (project_experience): ["project experience", "experiență", "experiență de proiect", "work experience", "experiență profesională"]
+
+                If a section title is formatted differently (e.g., larger font size, bold, capitalized), treat it as a strong signal of a section header even if not an exact synonym.
+
+                Entries within each section may be presented in multiple formats, including:
+                - Numbered items (e.g., "1. Python")
+                - Bulleted lists (e.g., "- JavaScript", "• HTML", "· CSS")
+                - Indented or aligned text (with or without leading/trailing spaces)
+                - Free text separated by newlines or commas
+
+                The parser must normalize all formats and extract clean individual items from each section.
+
+                Within sections like skills or languages, detect grouped entries followed by a common rating (e.g., “Python, TensorFlow: 4”).
+                These must be expanded into individual elements (e.g., ["Python: 4", "TensorFlow: 4"]).
+            </description>
+        </step>
+        <step>
+            <name>Handle Unknown Sections</name>
+            <description>
+                Any section not matched to a known category should be stored under the "others" field.
+                Try to split the content intuitively into meaningful elements (based on bullet points, new lines, or indentation), and return a flat List of Strings.
+                The list should only include plain textual information (no maps or nested structures).
+                Ensure that content that does not belong to known sections is identified and stored correctly in the "others" field.
+            </description>
+        </step>
+        <step>
+            <name>Output Format</name>
+            <description>
+                Return the extracted data in the following structure, fully compatible with the database model for each section:
+                - `name`: string (e.g., "John Doe")
+                - `technical_skills`: List<String> (e.g., ["Python: 4", "TensorFlow: 4", "JavaScript: 3"])
+                - `foreign_languages`: List<String> (e.g., ["English: 5", "German: 3"])
+                - `education`: List<String> (e.g., ["Bachelor of Science in Computer Science", "Master of Engineering"])
+                - `certifications`: List<String> (e.g., ["AWS Certified Solutions Architect", "Oracle Certified Java Programmer"])
+                - `project_experience`: List<String> (e.g., ["Developed a web app using ReactJS", "Led a team in a data science project"])
+                - `others`: List<String> (e.g., ["Volunteer work at XYZ", "Member of XYZ club", "Personal projects in AI"])
+            </description>
+        </step>
+    </steps>
+    <validation>
+        Test with CVs in multiple layouts and formats (plain, styled, OCRed) to ensure consistent and correct parsing of structured information.
+        Validate that grouped entries with common attributes (e.g., skills with shared ratings) are split properly and that sections are correctly categorized.
+        Ensure that all text outside of identified sections is placed in the "others" category.
+    </validation>
+    <additional_notes>
+        Ensure that the parser uses both text and formatting signals (e.g., font size, bold, capitalization) to detect sections.
+        Normalize all list formats (numbered, bulleted, indented, comma-separated) to extract clean entries.
+        Do not add fields unless explicitly found in the CV (e.g., do not guess a school name or date if not present).
+        Format the final result so that each section returns a List of Strings, compatible with the database schema.
+        Sections identified by formatting cues (like bold or large fonts) must be prioritized over just text matching.
+    </additional_notes>
+</task>
+
+<context>
+    <description>
+        The goal is to robustly extract structured data from a wide variety of CVs (including OCR or styled), returning fields that directly match the database model:
+        - name (String)
+        - technical_skills (List<String>)
+        - foreign_languages (List<String>)
+        - education (List<String>)
+        - certifications (List<String>)
+        - project_experience (List<String>)
+        - others (List<String>), each being a meaningful, cleanly formatted item.
+        The parser must clearly differentiate between actual sections and unrelated text, saving only relevant data in the appropriate sections.
+    </description>
+</context>
