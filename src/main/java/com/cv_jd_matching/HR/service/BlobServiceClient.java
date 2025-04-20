@@ -67,7 +67,9 @@ public class BlobServiceClient {
         String extension = originalFilename.contains(".") ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
         String content = FileTextExtractor.extractTextFromFile(new ByteArrayInputStream(fileBytes), originalFilename);
         Map<String, Object> cvData = CvParser.parseCv(content);
+
         String extractedName = (String) cvData.get("name");
+        System.out.println("extractedName"+extractedName);
         if (extractedName == null || extractedName.trim().isEmpty()) {
             throw new InvalidFileFormatException("Could not extract name from the CV.");
         }
@@ -108,6 +110,8 @@ public class BlobServiceClient {
             throw e;
         }
     }
+
+
 
 
     public String uploadJobDescription(MultipartFile file) throws IOException {

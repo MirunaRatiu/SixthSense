@@ -1,4 +1,5 @@
 package com.cv_jd_matching.HR.parser;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,6 +18,7 @@ public class CvParser {
                     - When extracting any text from the CV, **replace all occurrences of the newline character (`\\n`) with a space.**
                     - When extracting text that should represent proper nouns, titles, or the beginning of words, **prioritize interpreting the simple vertical character as the uppercase letter "I"**, if the linguistic context suggests this.
                     - When the simple vertical character appears between elements that seem to be from a list or in places where a separator would be logical, **interpret it as the vertical bar "|"**.
+                    - **Ensure all Romanian diacritics (ă, â, î, ș, ț) are preserved exactly as they appear in the text**. This is crucial, especially for names and Romanian-specific content.
                   </global_instructions>
     <task>
                   <name>Advanced and Structured CV Parsing (Exclusive Extraction with Synonyms - Mandatory Main Sections with Scores, Separate Certifications, and Dual Parsing)</name>
@@ -74,7 +76,7 @@ public class CvParser {
                         4.  **Ambiguity or Lack of Clarity:** If the level association is ambiguous, uncertain, or the level is mentioned before the list of skills without a clear connection, **include only the skills without assigning a level** for those cases.
             
                         **Format of the "level" Field:**
-                        - If a *score* is identified (e.g., "7/10", "90%"), include the `"level"` field with the value `"Score: [Value]"`.
+                        - If a *score* is identified (e.g., "7", "90%"), include the `"level"` field with the value `"[Value]"`.
                         - If a *proficiency level* is identified (e.g., "Expert", "Advanced", "Intermediate", "Beginner", "Fluent", "Professional"), include the `"level"` field with the proficiency value.
                         - If both (score and proficiency) are present for a skill, include the `"level"` field with both pieces of information (e.g., `"Score: 8/10, Advanced"`).
                         - If no level is identified for a skill, include only the `"skill"` field with the skill name.
@@ -115,7 +117,7 @@ public class CvParser {
                         Extract details ONLY for information related to certifications, specific modules, specialization courses (e.g., those offered by academies, companies, organizations). Ensure to clearly distinguish these from academic degrees. If no certificate information is found, the "certifications" key will be omitted. **ENSURE THAT ANY ROMANIAN TEXT WITHIN THIS SECTION PRESERVES DIACRITICS.**
             
                         If a section combines both types of information (e.g., "Education and Qualifications"), analyze each individual element and distribute it to the corresponding section ("education" or "certifications") based on the type of institution/program mentioned.
-                        **Look for and extract any mentioned technologies, tools, or methodologies associated with the certification and include them in a "technologies" list (optional).**
+                        **Look for and extract any mentioned technologies, tools, or methodologies associated with the certification and include them in a "technologies" list .**
                         *Education Structure:*
                         "education": [
                           {
@@ -135,7 +137,7 @@ public class CvParser {
                         
                         *Certifications Structure:*
                         "certifications": [
-                          { "name": "Certification/Module Name", "institution": "Issuing Institution (Academy, Company)", "date": "YYYY-MM","technologies": ["Technology A", "Technology B", ...] (optional) },
+                          { "name": "Certification/Module Name", "institution": "Issuing Institution (Academy, Company)", "date": "YYYY-MM","technologies": ["Technology A", "Technology B", ...] },
                           { ... }
                         ]
             
@@ -152,7 +154,7 @@ public class CvParser {
                         - **If a duration is explicitly mentioned (e.g., "2 ani și 3 luni", "5 months", "1 year"), save this duration exactly as mentioned in the `"duration"` field within the "period" sub-object.**
                         - If both "start_date" and "end_date" (including the year) are present, calculate the duration in years, months, and days and include a `"duration_calculated"` field with this value. Keep the "start_date" and "end_date" fields as well.
                         - If either date is missing or the duration cannot be calculated, include only the present "start_date" and/or "end_date" fields. For competitions, use the "date" field if present. **ENSURE THAT ANY ROMANIAN TEXT WITHIN THIS SECTION PRESERVES DIACRITICS.**
-                        **For job entries, look for and extract any mentioned technologies, tools, or methodologies used in that role and include them in a "technologies" list (optional).**
+                        **For job entries, look for and extract any mentioned technologies, tools, or methodologies used in that role and include them in a "technologies" list.**
                         Structure:
                         "work_experience": [
                           {
@@ -166,7 +168,7 @@ public class CvParser {
                               "duration_calculated": "X years, Y months, Z days" // calculated if both start and end dates are available
                             },
                             "description": ["Point 1", "Point 2", "..."],
-                            "technologies": ["Technology A", "Technology B", ...] (optional)
+                            "technologies": ["Technology A", "Technology B", ...]
                           },
                           {
                             "type": "competition",
@@ -185,12 +187,13 @@ public class CvParser {
                       <details>
                         Identify the relevant sections for project experience using titles such as "Projects Experience", "Projects", "Proiecte", "Experiență Proiecte". Extract the details for each project ONLY if mentioned. If no relevant section is found, the "projects_experience" key will be omitted. **ENSURE THAT ANY ROMANIAN TEXT WITHIN THIS SECTION PRESERVES DIACRITICS.**
                        **Instructions for description:** When extracting the content for the "description" field, identify and capture each complete idea as a single string. **Do not split ideas based solely on line breaks.** If an idea spans multiple lines in the CV, join those lines together into one continuous string. Ensure that any newline characters (`\n`) present in the original multi-line text are **not included** in the final string. You may need to replace or remove these newline characters during the joining process.
+                       **For job entries,,ook for and extract any mentioned technologies, tools, or methodologies used in that role and include them in a "technologies" list.**
                         Structure:
                         "project_experience": [
                           {
                             "title": "Project Title",
                             "description": "Short Description" (optional),
-                            "technologies": ["Technology 1", "Technology 2", "..."] (optional)
+                            "technologies": ["Technology 1", "Technology 2", "..."]
                           },
                           { ... }
                         ]
@@ -312,11 +315,15 @@ public class CvParser {
         }
 
         try(Client client = Client.builder().apiKey(GEMINI_API_KEY).build()) {
-            GenerateContentResponse response =
-                    client.models.generateContent(GEMINI_MODEL, PROMPT + "\n\nCV Content:\n" + content, null);
 
-            System.out.println("Response:"+response);
+            String encodedContent = encodeDiacritics(replaceLongDashWithShortDash(content));
+
+            GenerateContentResponse response =
+                    client.models.generateContent(GEMINI_MODEL, PROMPT + "\n\nCV Content:\n" + encodedContent, null);
+
+            System.out.println("Response:" + response);
             String apiResponse = response.text();
+
             if (apiResponse.startsWith("```json")) {
                 apiResponse = apiResponse.substring(7).trim();
             }
@@ -324,6 +331,9 @@ public class CvParser {
                 apiResponse = apiResponse.substring(0, apiResponse.length() - 3).trim();
             }
             System.out.println("API Response: " + apiResponse);
+
+            apiResponse = decodeDiacritics(apiResponse);
+
             Gson gson = new Gson();
             Map parsedData = null;
 
@@ -362,7 +372,60 @@ public class CvParser {
         return data;
     }
 
-public static List<Object> convertToList(Object obj) {
+
+    public static String encodeDiacritics(String text) {
+        if (text == null) return null;
+
+        text = text.replace("ă", "\\u0103");
+        text = text.replace("î", "\\u00EE");
+        text = text.replace("ț", "\\u021B");
+        text = text.replace("ș", "\\u0219");
+        text = text.replace("â", "\\u00E2");
+
+        text = text.replace("Ă", "\\u0102");
+        text = text.replace("Î", "\\u00CE");
+        text = text.replace("Ț", "\\u021A");
+        text = text.replace("Ș", "\\u0218");
+        text = text.replace("Â", "\\u00C2");
+
+        text = text.replace("\"", "\\u0022");
+
+//        text = text.replace("\\", "\\u005C");
+//        text = text.replace("|", "\\u007C");
+//        text = text.replace("-", "\\u002D");
+
+        return text;
+    }
+
+    public static String decodeDiacritics(String text) {
+        if (text == null) return null;
+
+        text = text.replace("\\u0103", "ă");
+        text = text.replace("\\u00EE", "î");
+        text = text.replace("\\u021B", "ț");
+        text = text.replace("\\u0219", "ș");
+        text = text.replace("\\u00E2", "â");
+
+
+        text = text.replace("\\u0102", "Ă");
+        text = text.replace("\\u00CE", "Î");
+        text = text.replace("\\u021A", "Ț");
+        text = text.replace("\\u0218", "Ș");
+        text = text.replace("\\u00C2", "Â");
+
+        text = text.replace("\\u0022", "\"");
+//        text = text.replace("\\u005C", "\\");
+//        text = text.replace("\\u007C", "|");
+//        text = text.replace("\\u002D", "-");
+
+        return text;
+    }
+
+    public static String replaceLongDashWithShortDash(String text) {
+        return text.replace("–", "-");
+    }
+
+    public static List<Object> convertToList(Object obj) {
     if (obj == null) {
         return new ArrayList<>();
     }
@@ -397,7 +460,7 @@ public static List<Object> convertToList(Object obj) {
     }
 
     private static String extractName(String content) {
-        Pattern namePattern = Pattern.compile("([A-ZĂÂÎȘȚ][a-zăâîșț]+\\\\s){1,2}[A-ZĂÂÎȘȚ][a-zăâîșț]+");
+        Pattern namePattern = Pattern.compile("([A-ZĂÂÎȘȚ][a-zăâîșț]+\\s){1,2}[A-ZĂÂÎȘȚ][a-zăâîșț]+");
         Matcher nameMatcher = namePattern.matcher(content.substring(0, Math.min(500, content.length())));
         if (nameMatcher.find()) {
             return nameMatcher.group(1).trim();
@@ -493,7 +556,6 @@ public static List<Object> convertToList(Object obj) {
                         String existingKey = lastEntry.keySet().iterator().next();
                         lastEntry.put(existingKey, lastEntry.get(existingKey) + "\n" + line);
                         } else {
-                        // If it doesn't fit any pattern=> add it as a generic 'other'
                         others.add(Map.of("unknown", line));
                         }
                     }
