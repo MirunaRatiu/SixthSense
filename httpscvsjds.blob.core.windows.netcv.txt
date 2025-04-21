@@ -1,0 +1,36 @@
+https://cvsjds.blob.core.windows.net/cvs?sp=r&st=2025-04-14T19:25:21Z&se=2025-05-03T03:25:21Z&sip=188.27.131.109&spr=https&sv=2024-11-04&sr=c&sig=eVG%2Fn4MREcKum1F0YdVkcZl0q19gwQF8Vk2N0ZYTTmE%3D
+
+
+sp=r&st=2025-04-14T19:25:21Z&se=2025-05-03T03:25:21Z&sip=188.27.131.109&spr=https&sv=2024-11-04&sr=c&sig=eVG%2Fn4MREcKum1F0YdVkcZl0q19gwQF8Vk2N0ZYTTmE%3D
+
+
+
+
+https://docs.google.com/gview?url=https://cvsjds.blob.core.windows.net/cvs/cv_1_Miruna_Ratiu.docx?sp=r&st=2025-04-14T19:25:21Z&se=2025-05-03T03:25:21Z&sip=188.27.131.109&spr=https&sv=2024-11-04&sr=c&sig=eVG%2Fn4MREcKum1F0YdVkcZl0q19gwQF8Vk2N0ZYTTmE%3D&embedded=true
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CV Preview</title>
+</head>
+<body>
+  <h2>Lista CV-uri</h2>
+  <ul>
+    <li><a href="#" onclick="previewCV('https://cvsjds.blob.core.windows.net/cvs/cv_1_Miruna_Ratiu.docx?sp=r&st=2025-04-13T20:00:00Z&se=2025-04-15T20:00:00Z&spr=https&sv=2021-08-06&sr=b&sig=0ZYTTmE=')">CV Miruna Ratiu</a></li>
+    <li><a href="#" onclick="previewCV('https://...alt-cv.docx?...')">Alt CV</a></li>
+  </ul>
+
+  <h2>Preview:</h2>
+  <iframe id="cvFrame" width="100%" height="600px" frameborder="0"></iframe>
+
+  <script>
+    function previewCV(url) {
+      const encodedURL = encodeURIComponent(url);
+      const viewerURL = `https://docs.google.com/gview?url=${encodedURL}&embedded=true`;
+      document.getElementById('cvFrame').src = viewerURL;
+    }
+  </script>
+</body>
+</html>

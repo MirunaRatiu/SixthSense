@@ -1,0 +1,179 @@
+package com.cv_jd_matching.HR.parser;
+
+import com.cv_jd_matching.HR.entity.Cv;
+import com.cv_jd_matching.HR.error.InvalidFileFormatException;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+
+import java.io.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class CvParser {
+
+    private static final String[] REQUIRED_SECTIONS = {
+            "Technical Skills",
+            "Professional Skills",
+            "Foreign Languages",
+            "Education",
+            "Certifications",
+            "Project Experience"
+    };
+
+    public static String extractTextFromDocx(InputStream inputStream) {
+        StringBuilder text = new StringBuilder();
+        try (XWPFDocument document = new XWPFDocument(inputStream)) {
+            // Obține toate paragrafele din document
+            List<XWPFParagraph> paragraphs = document.getParagraphs();
+            for (XWPFParagraph para : paragraphs) {
+                text.append(para.getText()).append("\n");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return text.toString();
+    }
+
+
+    public static Map<String, Object> parseCv(String content, String fileName) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("name", "");
+        data.put("technical_skills", new ArrayList<String>());
+        data.put("foreign_languages", new ArrayList<String>());
+        data.put("education", new ArrayList<String>());
+        data.put("certifications", new ArrayList<String>());
+        data.put("project_experience", new ArrayList<String>());
+
+        try {
+            // Extract Full Name with Validation
+            String[] nameLines = content.split("\n");
+            List<String> sectionHeaders = Arrays.asList(REQUIRED_SECTIONS);
+            for (String line : nameLines) {
+                // Skip known section headers
+                if (sectionHeaders.contains(line.trim())) {
+                    continue;
+                }
+
+                // Validate the name format (e.g., "FirstName LastName" with Romanian characters, hyphens, and underscores)
+                Pattern namePattern = Pattern.compile(
+                        "^([A-ZĂÎÂȘȚ][a-zăîâșț]+(?:[-_]?[A-Za-zĂÎÂȘȚăîâșț]+)*(?: [A-ZĂÎÂȘȚ][a-zăîâșț]+(?:[-_]?[A-Za-zĂÎÂȘȚăîâșț]+)*)*)$"
+                );
+                Matcher nameMatcher = namePattern.matcher(line.trim());
+                if (nameMatcher.matches()) {
+                    data.put("name", nameMatcher.group(1).trim());
+                    break; // Stop searching once a valid name is found
+                }
+            }
+
+            // Fallback: If no name is found, log a warning
+            if (data.get("name").equals("")) {
+                System.out.println("Warning: Could not extract a valid name from the CV in file: " + fileName);
+            }
+
+            // Extract Technical/Professional Skills
+            Pattern skillsPattern = Pattern.compile("(Technical Skills|Professional Skills)\\n([\\s\\S]*?)(?=Foreign Languages|Education|$)");
+            Matcher skillsMatcher = skillsPattern.matcher(content);
+            if (skillsMatcher.find()) {
+                String skillsRaw = skillsMatcher.group(2).trim();
+                List<String> skillsList = new ArrayList<>();
+
+                // Process each skill entry
+                for (String skillEntry : skillsRaw.split("\n")) {
+                    if (!skillEntry.trim().isEmpty()) {
+                        // Check if the entry contains a score (e.g., "Python, TensorFlow: 4")
+                        Pattern scorePattern = Pattern.compile("^(.*?):\\s*(\\d+)$");
+                        Matcher scoreMatcher = scorePattern.matcher(skillEntry.trim());
+                        if (scoreMatcher.matches()) {
+                            String[] skills = scoreMatcher.group(1).split(",");
+                            String score = scoreMatcher.group(2).trim();
+                            for (String skill : skills) {
+                                skillsList.add(skill.trim() + ": " + score);
+                            }
+                        } else {
+                            // No score found, just add the skills as-is
+                            String[] skills = skillEntry.split(",");
+                            for (String skill : skills) {
+                                skillsList.add(skill.trim().replace("-", "").trim());
+                            }
+                        }
+                    }
+                }
+                data.put("technical_skills", skillsList);
+            }
+
+            // Extract Foreign Languages
+            Pattern languagesPattern = Pattern.compile("Foreign Languages\\n([\\s\\S]*?)(?=Education|Certifications|$)");
+            Matcher languagesMatcher = languagesPattern.matcher(content);
+            if (languagesMatcher.find()) {
+                List<String> languagesList = new ArrayList<>();
+                for (String lang : languagesMatcher.group(1).split("\n")) {
+                    if (!lang.trim().isEmpty()) {
+                        languagesList.add(lang.trim().replace("-", "").trim());
+                    }
+                }
+                data.put("foreign_languages", languagesList);
+            }
+
+            // Extract Education
+            Pattern educationPattern = Pattern.compile("Education\\n([\\s\\S]*?)(?=Certifications|Project Experience|$)");
+            Matcher educationMatcher = educationPattern.matcher(content);
+            if (educationMatcher.find()) {
+                String educationRaw = educationMatcher.group(1).trim();
+                List<String> educationEntries = new ArrayList<>();
+
+                // Look for bachelor's degree information
+                Pattern bachelorPattern = Pattern.compile("- University Name:\\s*(.*?)\\s*- Program Duration:\\s*(\\d+)\\s*years");
+                Matcher bachelorMatcher = bachelorPattern.matcher(educationRaw);
+                while (bachelorMatcher.find()) {
+                    String universityName = bachelorMatcher.group(1).trim();
+                    String duration = bachelorMatcher.group(2).trim();
+                    educationEntries.add("Bachelor at " + universityName + " (" + duration + " years)");
+                }
+
+                // Look for master's degree information
+                Pattern masterPattern = Pattern.compile("- Master Degree Name:\\s*(.*?)\\s*- Program Duration:\\s*(\\d+)\\s*years");
+                Matcher masterMatcher = masterPattern.matcher(educationRaw);
+                while (masterMatcher.find()) {
+                    String universityName = masterMatcher.group(1).trim();
+                    String duration = masterMatcher.group(2).trim();
+                    educationEntries.add("Masters at " + universityName + " (" + duration + " years)");
+                }
+
+                data.put("education", educationEntries);
+            }
+
+            // Extract Certifications
+            Pattern certificationsPattern = Pattern.compile("Certifications\\n([\\s\\S]*?)(?=Project Experience|$)");
+            Matcher certificationsMatcher = certificationsPattern.matcher(content);
+            if (certificationsMatcher.find()) {
+                List<String> certificationsList = new ArrayList<>();
+                for (String cert : certificationsMatcher.group(1).split("\n")) {
+                    if (!cert.trim().isEmpty()) {
+                        certificationsList.add(cert.trim().replace("-", "").trim());
+                    }
+                }
+                data.put("certifications", certificationsList);
+            }
+
+            // Extract Project Experience
+            Pattern projectsPattern = Pattern.compile("Project Experience\\n([\\s\\S]*)");
+            Matcher projectsMatcher = projectsPattern.matcher(content);
+            if (projectsMatcher.find()) {
+                List<String> projectsList = new ArrayList<>();
+                for (String project : projectsMatcher.group(1).split("\n")) {
+                    if (!project.trim().isEmpty()) {
+                        projectsList.add(project.trim().replace("-", "").trim());
+                    }
+                }
+                data.put("project_experience", projectsList);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return data;
+    }
+
+}
