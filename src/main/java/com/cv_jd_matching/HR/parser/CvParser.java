@@ -316,7 +316,7 @@ public class CvParser {
 
         try(Client client = Client.builder().apiKey(GEMINI_API_KEY).build()) {
 
-            String encodedContent = encodeDiacritics(replaceLongDashWithShortDash(content));
+            String encodedContent = SymbolsManipulation.encodeDiacritics(replaceLongDashWithShortDash(content));
 
             GenerateContentResponse response =
                     client.models.generateContent(GEMINI_MODEL, PROMPT + "\n\nCV Content:\n" + encodedContent, null);
@@ -332,7 +332,7 @@ public class CvParser {
             }
             System.out.println("API Response: " + apiResponse);
 
-            apiResponse = decodeDiacritics(apiResponse);
+            apiResponse = SymbolsManipulation.decodeDiacritics(apiResponse);
 
             Gson gson = new Gson();
             Map parsedData = null;
@@ -373,53 +373,7 @@ public class CvParser {
     }
 
 
-    public static String encodeDiacritics(String text) {
-        if (text == null) return null;
 
-        text = text.replace("ă", "\\u0103");
-        text = text.replace("î", "\\u00EE");
-        text = text.replace("ț", "\\u021B");
-        text = text.replace("ș", "\\u0219");
-        text = text.replace("â", "\\u00E2");
-
-        text = text.replace("Ă", "\\u0102");
-        text = text.replace("Î", "\\u00CE");
-        text = text.replace("Ț", "\\u021A");
-        text = text.replace("Ș", "\\u0218");
-        text = text.replace("Â", "\\u00C2");
-
-        text = text.replace("\"", "\\u0022");
-
-//        text = text.replace("\\", "\\u005C");
-//        text = text.replace("|", "\\u007C");
-//        text = text.replace("-", "\\u002D");
-
-        return text;
-    }
-
-    public static String decodeDiacritics(String text) {
-        if (text == null) return null;
-
-        text = text.replace("\\u0103", "ă");
-        text = text.replace("\\u00EE", "î");
-        text = text.replace("\\u021B", "ț");
-        text = text.replace("\\u0219", "ș");
-        text = text.replace("\\u00E2", "â");
-
-
-        text = text.replace("\\u0102", "Ă");
-        text = text.replace("\\u00CE", "Î");
-        text = text.replace("\\u021A", "Ț");
-        text = text.replace("\\u0218", "Ș");
-        text = text.replace("\\u00C2", "Â");
-
-        text = text.replace("\\u0022", "\"");
-//        text = text.replace("\\u005C", "\\");
-//        text = text.replace("\\u007C", "|");
-//        text = text.replace("\\u002D", "-");
-
-        return text;
-    }
 
     public static String replaceLongDashWithShortDash(String text) {
         return text.replace("–", "-");

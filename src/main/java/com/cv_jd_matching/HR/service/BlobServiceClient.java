@@ -115,8 +115,58 @@ public class BlobServiceClient {
 
 
     public String uploadJobDescription(MultipartFile file) throws IOException {
-        System.out.println("Uploading job description...");
-        return "";
+        BlobContainerClient containerClient = getContainerClient(containerName2);
+        byte[] fileBytes = file.getBytes();
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
+            throw new IllegalArgumentException("File name is missing.");
+        }
+
+        String extension = originalFilename.contains(".")
+                ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                : "";
+
+        String content = FileTextExtractor.extractTextFromFile(new ByteArrayInputStream(fileBytes), originalFilename);
+        Map<String, Object> jdData = JobDescriptionParser.parseJd(content);
+
+        String jobTitle = (String) jdData.get("job_title");
+        if (jobTitle == null || jobTitle.trim().isEmpty()) {
+            jobTitle = "UnknownJobTitle";
+        }
+
+        int currentJdsNumber = jobDescriptionRepository.countAll() + 1;
+        String correctFileName = "jd_" + currentJdsNumber + "_" + jobTitle.replaceAll("[^a-zA-Z0-9]", "_") + extension;
+
+        BlobClient blobClient = containerClient.getBlobClient(correctFileName);
+        InputStream newFileStream = new ByteArrayInputStream(fileBytes);
+        blobClient.upload(newFileStream, fileBytes.length, true);
+
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusHours(1);
+        BlobSasPermission permissions = new BlobSasPermission().setReadPermission(true);
+        BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
+        String sasToken = blobClient.generateSas(sasValues);
+        String urlWithSas = blobClient.getBlobUrl() + "?" + sasToken;
+
+        try {
+            JobDescription jd = new JobDescription();
+            jd.setFileName(correctFileName);
+            jd.setPathName(urlWithSas);
+            jd.setJobTitle((String) jdData.get("job_title"));
+            jd.setCompanyOverview((String) jdData.get("company_overview"));
+            jd.setKeyResponsibilities(String.join("\n", (List<String>) jdData.get("key_responsibilities")));
+            jd.setRequiredQualifications(String.join("\n", (List<String>) jdData.get("required_qualifications")));
+            jd.setPreferredSkills(String.join("\n", (List<String>) jdData.get("preferred_skills")));
+            jd.setBenefits(String.join("\n", (List<String>) jdData.get("benefits")));
+            jd.setMessage("Parsed successfully");
+
+            jobDescriptionRepository.save(jd);
+
+            return urlWithSas;
+        } catch (Exception e) {
+            blobClient.delete();
+            throw e;
+        }
     }
+
 
 }
