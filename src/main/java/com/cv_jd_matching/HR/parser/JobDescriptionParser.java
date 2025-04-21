@@ -11,68 +11,85 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class JobDescriptionParser {
+    //prompt realizat de Muresan Davide
+    private static final String PROMPT = """ 
+    <task>
+    <name>Job Description Analysis</name>
+    <description>
+    Transform the job description into atomic elements with these rules:
+    1. Split ALL entries containing commas/conjunctions into individual items
+    2. Group related tasks from the same original statement into task_groups
+    3. Preserve OR relationships in qualifications and skills
+    4. Maintain parallel structure with CV format
+    </description>
+    <output-structure>
+    {{
+        "job_title": "string",
+        "company_overview": "string",
+        "key_responsibilities": {{
+            "task_groups": [
+                {{
+                    "original_statement": "string",
+                    "sub_tasks": [{{"task": "string"}}]
+                }}
+            ]
+        }},
+        "required_qualifications": [
+            {{
+                "group": [{{"requirement": "string"}}],
+                "group_type": "OR"
+            }} | {{"requirement": "string"}}
+        ],
+        "preferred_skills": [
+            {{
+                "group": [{{"skill": "string"}}],
+                "group_type": "OR"
+            }} | {{"skill": "string"}}
+        ],
+        "benefits": [{{"benefit": "string"}}]
+    }}
+    </output-structure>
+    <examples>
+    <!-- Responsabilități grupate -->
+    Input: "design, development, and implementation of SAP applications and solutions"
+    Output: {{
+        "original_statement": "Assist in the design, development, and implementation of SAP applications and solutions",
+        "sub_tasks": [
+            {{"task": "Design SAP applications"}},
+            {{"task": "Design SAP solutions"}},
+            {{"task": "Develop SAP applications"}},
+            {{"task": "Develop SAP solutions"}},
+            {{"task": "Implement SAP applications"}},
+            {{"task": "Implement SAP solutions"}}
+        ]
+    }}
 
-    private static final String PROMPT = """
-            <task>
-                          <name>Advanced and Structured Job Description Parsing (for CV-JD Matching)</name>
-                          <description>
-                            The goal is to extract structured data from job descriptions to enable intuitive and robust **matching with parsed CVs**.
-                        
-                            Each section must be **cleanly separated**, each item **clearly listed**, and **free from unnecessary line breaks (`\\n`)** that may interrupt context. If line breaks appear in the middle of a sentence or paragraph, treat them as spaces.
-                        
-                            If sections contain **bullet points (-, *, •)** or are **numbered**, treat each point as an individual list item. If sections are written in paragraph form, **segment the ideas logically into a list of items**.
-                        
-                            Preserve the integrity of the original text while adapting it into a structure that aligns with CV parsing for similarity scoring.
-                        
-                            The following sections will be parsed (if present):
-                            - `job_title`: A concise string with the exact job title
-                            - `company_overview`: A string (one paragraph)
-                            - `key_responsibilities`: A list of strings (each describing one responsibility)
-                            - `required_qualifications`: A list of strings (each describing one requirement)
-                            - `preferred_skills`: A list of strings (each describing one skill or nice-to-have item)
-                            - `benefits`: A list of strings (each describing one benefit)
-                            - `others`: A dictionary with any remaining information, grouped by title
-                        
-                            **Synonyms** for each section should also be considered, for example:
-                            - Responsibilities = Duties, Tasks, Expectations
-                            - Required Qualifications = Must-haves, Requirements, You Should Have
-                            - Preferred Skills = Nice-to-Haves, Preferred Qualifications
-                            - Benefits = Perks, Compensation, What We Offer
-                        
-                            Each list item should:
-                            - Be **logically separated** (by bullet, dash, number, or sentence)
-                            - Be **cleaned** of line breaks (`\\n`) unless part of markdown formatting
-                            - Be **ready for similarity comparison** with parsed CV fields
-                        
-                            ⚠️ DO NOT combine multiple responsibilities or skills into one long list entry. Instead, split by logical separators like commas, semicolons, or bullet points.
-                        
-                            ✅ If a list appears with separators but no bullets (e.g., "Java, Python, SQL"), break it into distinct items.
-                        
-                            Return only valid JSON, matching this example structure:
-                        
-                            
-                            {
-                              "job_title": "Junior Tech Lead",
-                              "company_overview": "[Company overview as paragraph]",
-                              "key_responsibilities": ["Responsibility 1", "Responsibility 2", ...],
-                              "required_qualifications": ["Qualification 1", "Qualification 2", ...],
-                              "preferred_skills": ["Skill 1", "Skill 2", ...],
-                              "benefits": ["Benefit 1", "Benefit 2", ...],
-                              
-                            }
-                            
-                        
-                            ❗Omit any section if it does not appear explicitly. If a section is present but empty or cannot be parsed properly, return it as an empty list `[]`.
-                        
-                            The output must be clean, consistent, and **ready to be matched** against CVs parsed with detailed technical skills, education, experience, etc.
-                          </description>
-                        
-                          <content>
-                          {content}
-                          </content>
-                        </task>
-                        
-""";
+    <!-- Calificări cu OR -->
+    Input: "Bachelor’s degree in Computer Science, Information Technology, or related field"
+    Output: {{
+        "group": [
+            {{"requirement": "Bachelor’s degree in Computer Science"}},
+            {{"requirement": "Bachelor’s degree in Information Technology"}},
+            {{"requirement": "Bachelor’s degree in related field"}}
+        ],
+        "group_type": "OR"
+    }}
+
+    <!-- Skill-uri cu OR -->
+    Input: "SAP Fiori or SAP S/4HANA"
+    Output: {{
+        "group": [
+            {{"skill": "SAP Fiori"}},
+            {{"skill": "SAP S/4HANA"}}
+        ],
+        "group_type": "OR"
+    }}
+    </examples>
+    <content>
+    {content}
+    </content>
+    </task>
+    """;
 
     private static final String GEMINI_MODEL = "gemini-2.0-flash-001";
     private static final String GEMINI_API_KEY = System.getenv("GOOGLE_API_KEY");
