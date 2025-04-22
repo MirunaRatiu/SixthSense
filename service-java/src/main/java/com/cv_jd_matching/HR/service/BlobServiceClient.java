@@ -168,6 +168,7 @@ public class BlobServiceClient {
 
         String jobTitle = (String) jdData.get("job_title");
         jobTitle = extractCoreJobTitle(jobTitle);
+        System.out.println(jdData);
 
 // ia doar partea de după ultimul "-"
         if (jobTitle.contains("-")) {
@@ -210,7 +211,7 @@ public class BlobServiceClient {
             jd.setBenefits(((List<?>) jdData.get("benefits"))
                     .stream().map(Object::toString).collect(Collectors.joining("\n")));
 
-            jd.setMessage("Parsed successfully");
+            jd.setMessage((String) jdData.get("message"));
 
             jobDescriptionRepository.save(jd);
 

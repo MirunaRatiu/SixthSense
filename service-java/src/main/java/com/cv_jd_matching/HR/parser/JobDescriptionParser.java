@@ -12,96 +12,153 @@ import java.util.stream.Collectors;
 
 public class JobDescriptionParser {
     private static final String PROMPT = """
-            <task>
-            <name>Advanced and Structured Parsing of Job Description</name>
-            <description>
-            Analyze the provided job description content and extract structured information as intuitively and detailed as possible, returning a JSON object with the defined sections.
-            The following sections will be extracted as separate sections and are considered mandatory if present in the job description:
-            - Job Title
-            - Company Overview
-            - Key Responsibilities
-            - Required Qualifications
-            - Preferred Skills
-            - Benefits
+<task>
+  <name>Atomic Job Description Decomposition for Semantic CV Matching</name>
+  <description>
+    Analyze the job description enclosed in <content> and decompose it into a fully structured JSON with **maximal atomicity and semantic fidelity**. Focus on **Key Responsibilities**, **Required Qualifications**, and **Preferred Skills**.
 
-            The JSON will include ONLY those fields and sections explicitly mentioned in the job description. If a specific information or section is not present, the corresponding field in the JSON will be omitted or its value will be `null`.
-            Sections will be identified using standard titles AND their synonyms.
-            Any other section, INCLUDING additional contact information, will be grouped under "others" with the section title as the key and the content as the value.
-            The primary goal is to facilitate further processing with NLP techniques for matching with resumes.
-            The following sections will be identified and structured to adapt to various formats and styles of job descriptions:
-            </description>
-            <steps>
-                <step>
-                    <name>Extracting Job Title</name>
-                    <details>
-                    Search and extract the job title from the job description. If found, it will be returned as the value for the "job_title" key at the top level of the JSON. If not found, the value of the "job_title" key will be `null` or the key will be omitted.
-                    </details>
-                </step>
-                <step>
-                    <name>Extracting Company Overview</name>
-                    <details>
-                    Identify sections relevant to company information using titles such as "Company Overview", "About Us", "Company Description", etc. Extract the content and return it under the "company_overview" key. If no relevant section is found, the key will be omitted.
-                    </details>
-                </step>
-                <step>
-                    <name>Extracting Key Responsibilities</name>
-                    <details>
-                    Identify sections relevant to responsibilities using titles such as "Key Responsibilities", "Responsibilities", "Duties", etc. Extract each responsibility as a list item and return under the "key_responsibilities" key. If no relevant section is found, the key will be omitted.
-                    </details>
-                </step>
-                <step>
-                    <name>Extracting Required Qualifications</name>
-                    <details>
-                    Identify sections relevant to qualifications using titles such as "Required Qualifications", "Requirements", "Must-Have Skills", etc. Extract each qualification as a list item and return under the "required_qualifications" key. If no relevant section is found, the key will be omitted.
-                    </details>
-                </step>
-                <step>
-                    <name>Extracting Preferred Skills</name>
-                    <details>
-                    Identify sections relevant to preferred skills using titles such as "Preferred Skills", "Nice-to-Have Skills", "Preferred Qualifications", etc. Extract each skill as a list item and return under the "preferred_skills" key. If no relevant section is found, the key will be omitted.
-                    </details>
-                </step>
-                <step>
-                    <name>Extracting Benefits</name>
-                    <details>
-                    Identify sections relevant to benefits using titles such as "Benefits", "Perks", "Compensation", etc. Extract each benefit as a list item and return under the "benefits" key. If no relevant section is found, the key will be omitted.
-                    </details>
-                </step>
-                <step>
-                    <name>Handling Other Sections</name>
-                    <details>
-                    Any other section identified that does not match the main categories (and their synonyms), including additional contact information, will be included under the "others" key. Extract the section title and content ONLY if such sections exist. If no such sections exist, the "others" key will be omitted.
-                    </details>
-                </step>
-            </steps>
-            <output-structure>
-                <name>Output Format</name>
-                <details>
-                Return a single JSON object that includes ONLY the keys for the information and sections present in the job description (identified by standard titles OR synonyms). The following sections will be at the top level (if found):
-                - "job_title": string (present only if found, mandatory)
-                - "company_overview": string (present only if found, mandatory)
-                - "key_responsibilities": list of strings (present only if found, mandatory)
-                - "required_qualifications": list of strings (present only if found, mandatory)
-                - "preferred_skills": list of strings (present only if found, mandatory)
-                - "benefits": list of strings (present only if found, mandatory)
-                - "others": object (present only if there are other sections or additional contact information)
-                </details>
-            </output-structure>
-            <considerations>
-                - Extract ONLY information explicitly present in the job description.
-                - If an entire section (identified by standard title OR synonym) is missing, omit the corresponding key in the JSON.
-                - If an individual field is missing (e.g., a specific benefit), do not include that field.
-                - Include the job title, company overview, key responsibilities, required qualifications, preferred skills, and benefits at the top level of the JSON (if found).
-                - Include any other sections or additional contact information under the "others" key.
-                - Prioritize accuracy and exact reflection of the job description's content.
-                - If a section in the job description contains information relevant to multiple mandatory sections, distribute the content contextually into the appropriate sections based on associated keywords.
-                - If, after distribution, a section cannot extract any information, it will be included in the JSON with an empty list `[]` to signal the absence of content but the logical presence of the section.
-            </considerations>
-            <content>
-            {job_description_content}
-            </content>
-            </task>
-            """;
+    === Atomic Decomposition Logic ===
+
+    🔍 Apply these rules to extract logically complete, atomic statements:
+
+    1. **Nested AND/OR logic**:
+       - Support **group nesting**: 
+         - `group_type: "AND"` can contain multiple `OR` groups
+         - `group_type: "OR"` can contain multiple `AND` groups
+       - Nesting MUST reflect the semantic logic of the original sentence.
+
+    2. **Enumerations with "and"/"or" inside complex phrases**:
+       → e.g., "using MySQL, MongoDB, or PostgreSQL":
+       - Split into **all possible logical combinations** by distributing verbs/actions.
+       - Preserve semantic units, e.g.:
+         - Design using MySQL
+         - Design using MongoDB
+         - Implement using PostgreSQL
+         etc.
+
+    3. **"and" splits**:
+       - Split **EVERY** instance where "and" joins distinct actions or items.
+       ✅ Remove "and"
+       ✅ Resulting items are grouped with `group_type: "AND"`
+
+    4. **"or" splits**:
+       - Split **EVERY** instance where "or" presents alternatives.
+       ✅ Remove "or"
+       ✅ Resulting items are grouped with `group_type: "OR"`
+
+    5. **Comma-based enumerations**:
+       - Treat all comma-separated lists (e.g., "X, Y, and Z") as **AND**, unless context clearly implies OR.
+       ✅ Remove commas and conjunctions.
+       ✅ group_type: "AND"
+       ✅ Same treatment as "and" rules.
+
+    6. **Combination Expansion**:
+       - When both AND and OR exist in the same statement, **expand all possible combinations**, reflecting logical structure.
+       - Ex: "Design and implement using X, Y, or Z" → generate:
+         - Design using X
+         - Design using Y
+         - Implement using Z
+         etc.
+       - Then group logically using nested AND/OR.
+
+    === Domain Deduction ===
+    Analyze the `company_overview` to deduce the company's main domain or industry (e.g., "FinTech", "E-commerce", "Healthcare SaaS", "Enterprise Software Solutions"). Use keywords and context to infer the primary focus of the company's activities. If the domain is not specific to a vertical industry, use a general term like "Enterprise Software Solutions" or "Technology Services".Store the deduced domain in the "message" field as a string, e.g., "Enterprise Software Solutions industry".
+
+    === Output Structure Requirements ===
+
+    * Each atomic `task`, `requirement`, or `skill` must be:
+      - A standalone, grammatically correct phrase
+      - Free of "and"/"or" if they caused a split
+      - Fully self-contained (contextually reconstructed if needed)
+    * Maintain the `original_statement` as provided.
+    * No atomic item should end with a dangling period or conjunction.
+    * Include the deduced domain in the `domain` field.
+
+    === Output Format ===
+
+    Output **only** the JSON object matching this structure:
+
+    {
+      "job_title": "string",
+      "company_overview": "string",
+      "message": "string",
+      "key_responsibilities": [
+        {
+          "original_statement": "string",
+          "group": [
+            {
+              "group": [
+                {"task": "string"},
+                ...
+              ],
+              "group_type": "AND" | "OR"
+            },
+            ...
+          ],
+          "group_type": "AND" | "OR"
+        }
+        |
+        {
+          "original_statement": "string",
+          "task": "string"
+        }
+      ],
+      "required_qualifications": [
+        {
+          "original_statement": "string",
+          "group": [
+            {
+              "group": [
+                {"requirement": "string"},
+                ...
+              ],
+              "group_type": "AND" | "OR"
+            },
+            ...
+          ],
+          "group_type": "AND" | "OR"
+        }
+        |
+        {
+          "original_statement": "string",
+          "requirement": "string"
+        }
+      ],
+      "preferred_skills": [
+        {
+          "original_statement": "string",
+          "group": [
+            {
+              "group": [
+                {"skill": "string"},
+                ...
+              ],
+              "group_type": "AND" | "OR"
+            },
+            ...
+          ],
+          "group_type": "AND" | "OR"
+        }
+        |
+        {
+          "original_statement": "string",
+          "skill": "string"
+        }
+      ],
+      "benefits": [
+        {
+          "original_statement": "string",
+          "benefit": "string"
+        }
+      ]
+    }
+
+  </description>
+  <content>
+  {content} 
+  </content>
+</task>
+""";
 
     private static final String GEMINI_MODEL = "gemini-2.0-flash-001";
     private static final String GEMINI_API_KEY = System.getenv("GOOGLE_API_KEY");
@@ -136,6 +193,7 @@ public class JobDescriptionParser {
             }
 
             apiResponse = SymbolsManipulation.decodeDiacritics(apiResponse);
+            System.out.println(apiResponse);
             Gson gson = new Gson();
             Map parsedData = gson.fromJson(apiResponse, Map.class);
 
@@ -146,6 +204,7 @@ public class JobDescriptionParser {
                 data.put("required_qualifications", convertToList(parsedData.get("required_qualifications")));
                 data.put("preferred_skills", convertToList(parsedData.get("preferred_skills")));
                 data.put("benefits", convertToList(parsedData.get("benefits")));
+                data.put("message", parsedData.getOrDefault("message",""));
             }
 
         } catch (Exception e) {
@@ -164,6 +223,7 @@ public class JobDescriptionParser {
         data.put("required_qualifications", extractList(content, "Required Qualifications"));
         data.put("preferred_skills", extractList(content, "Preferred Skills"));
         data.put("benefits", extractList(content, "Benefits"));
+        data.put("message", extractField(content,"message"));
         return data;
     }
 
