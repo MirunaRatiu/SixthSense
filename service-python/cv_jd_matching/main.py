@@ -1,4 +1,5 @@
 from typing import Optional
+import asyncio
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -7,6 +8,11 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 
 app = FastAPI()
+
+embedding_counter = 0
+lock = asyncio.Lock()
+condition = asyncio.Condition()
+
 
 # Initialize Chroma DB client
 chroma_client = chromadb.PersistentClient(path="./chroma_data")
@@ -48,6 +54,10 @@ class JobDescriptionDTO(BaseModel):
 
 @app.post("/embed/cv")
 async def embed_sections_cv(request: CvDTO):
+    global embedding_counter
+    async with condition:
+        embedding_counter += 1
+
     try:
         sections = {
             "technicalSkills": request.technicalSkills,
@@ -79,9 +89,18 @@ async def embed_sections_cv(request: CvDTO):
         return "success"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        async with condition:
+            embedding_counter -= 1
+            if embedding_counter == 0:
+                condition.notify_all()  # Wake any match waiting
 
 @app.post("/embed/jd")
 async def embed_sections_jd(request: JobDescriptionDTO):
+    global embedding_counter
+    async with condition:
+        embedding_counter += 1
+
     try:
         sections = {
             "jobTitle": request.jobTitle,
@@ -111,9 +130,17 @@ async def embed_sections_jd(request: JobDescriptionDTO):
         return "success"
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        async with condition:
+            embedding_counter -= 1
+            if embedding_counter == 0:
+                condition.notify_all()  # Wake any match waiting
 
 # @app.post("/match/jd", response_model=MatchResponse)
 # async def match_cv_to_jd(request: MatchRequest):
+#     async with condition:
+#         # Wait until all embedding operations are done
+#         await condition.wait_for(lambda: embedding_counter == 0)
 #     try:
 #         # Fetch the JD embeddings from the JD collection
 #         jd_results = jd_collection.get(where={"id": request.jd_id})
@@ -135,6 +162,7 @@ async def embed_sections_jd(request: JobDescriptionDTO):
 #
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn
