@@ -12,5 +12,6 @@ public interface IJobDescriptionRepository extends CrudRepository<JobDescription
         return Math.toIntExact(count());
     }
 
-    Optional<JobDescription> findJobDescriptionByJobTitle(String title);
+    Optional<JobDescription> findJobDescriptionByPathName(String path);
+
 }

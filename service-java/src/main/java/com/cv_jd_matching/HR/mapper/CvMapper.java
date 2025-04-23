@@ -1,6 +1,7 @@
 package com.cv_jd_matching.HR.mapper;
 
 import com.cv_jd_matching.HR.dto.CvDTO;
+import com.cv_jd_matching.HR.dto.CvViewDTO;
 import com.cv_jd_matching.HR.entity.Cv;
 
 public class CvMapper {
@@ -14,6 +15,14 @@ public class CvMapper {
                 .others(String.valueOf(cv.getOthers()))
                 .technicalSkills(String.valueOf(cv.getTechnicalSkills()))
                 .id(cv.getId())
+                .build();
+    }
+
+    public static CvViewDTO mapEntityToViewDTO(Cv cv){
+        return CvViewDTO.builder()
+                .name(cv.getName())
+                .id(cv.getId())
+                .skills(cv.getTechnicalSkills().stream().reduce("", (a, b) -> a + b)) // this will be changed
                 .build();
     }
 }

@@ -45,4 +45,20 @@ public class MatchingClientImpl implements MatchingClient{
                 .bodyToMono(Integer.class);
     }
 
+    public Mono<String> embedJobDescription(JobDescriptionDTO jobDescriptionDTO){
+        return webClient.post()
+                .uri("/embed/jd")
+                .bodyValue(jobDescriptionDTO)
+                .retrieve()
+                .bodyToMono(String.class);
+    }
+
+    public Mono<String> embedCv(CvDTO cvDTO){
+        return webClient.post()
+                .uri("/embed/cv")
+                .bodyValue(cvDTO)
+                .retrieve()
+                .bodyToMono(String.class);
+    }
+
 }
