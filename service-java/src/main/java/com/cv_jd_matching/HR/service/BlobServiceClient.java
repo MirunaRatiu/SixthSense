@@ -94,13 +94,13 @@ public class BlobServiceClient {
         try {
             Cv cv = new Cv();
             cv.setName(extractedName);
-            cv.setTechnicalSkills((List<String>) cvData.get("technical_skills"));
-            cv.setForeignLanguages((List<String>) cvData.get("foreign_languages"));
-            cv.setEducation((List<String>) cvData.get("education"));
-            cv.setCertifications((List<String>) cvData.get("certifications"));
-            cv.setProjectExperience((List<String>) cvData.get("project_experience"));
-            cv.setOthers((List<String>) cvData.get("others"));
-            cv.setWorkExperience((List<String>) cvData.get("work_experience"));
+            cv.setTechnicalSkills(String.valueOf((List<String>) cvData.get("technical_skills")));
+            cv.setForeignLanguages(String.valueOf((List<String>) cvData.get("foreign_languages")));
+            cv.setEducation(String.valueOf((List<String>) cvData.get("education")));
+            cv.setCertifications(String.valueOf((List<String>) cvData.get("certifications")));
+            cv.setProjectExperience(String.valueOf((List<String>) cvData.get("project_experience")));
+            cv.setOthers(String.valueOf((List<String>) cvData.get("others")));
+            cv.setWorkExperience(String.valueOf((List<String>) cvData.get("work_experience")));
             cv.setFileName(correctFileName);
             cv.setPathName(urlWithSas);
 
@@ -112,8 +112,6 @@ public class BlobServiceClient {
             throw e;
         }
     }
-
-
 
 
     public static String extractCoreJobTitle(String jobTitle) {
