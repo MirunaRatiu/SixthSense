@@ -1,7 +1,7 @@
 from typing import Optional
 import asyncio
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Body
 from pydantic import BaseModel
 import chromadb
 from sentence_transformers import SentenceTransformer
@@ -163,6 +163,95 @@ async def embed_sections_jd(request: JobDescriptionDTO):
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/delete/{item_type}")
+async def delete_by_id(item_type: str, item_id: int = Body(...)):
+    """
+    Delete all vectors in the specified collection (cv or jd) for the given item_id.
+    """
+    if item_type not in ["cv", "jd"]:
+        raise HTTPException(status_code=400, detail="item_type must be 'cv' or 'jd'")
+
+    collection = cv_collection if item_type == "cv" else jd_collection
+
+    try:
+        # Get all entries in the collection
+        results = collection.get(include=["metadatas"])
+
+        # Filter IDs where metadata.id == item_id
+        ids_to_delete = [
+            entry_id for entry_id, metadata in zip(results["ids"], results["metadatas"])
+            if metadata.get("id") == item_id
+        ]
+
+        if not ids_to_delete:
+            raise HTTPException(status_code=404, detail=f"No entries found for ID {item_id}")
+
+        # Delete the matching IDs
+        collection.delete(ids=ids_to_delete)
+
+        return {"status": "success", "deleted_ids": ids_to_delete}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def show_all_cvs():
+    print("===== CV COLLECTION =====")
+    try:
+        cv_results = cv_collection.get()
+
+        ids = cv_results.get("ids") or []
+        metadatas = cv_results.get("metadatas") or []
+        embeddings = cv_results.get("embeddings") or []
+
+        print(f"Total CV Entries: {len(ids)}")
+
+        for i in range(min(13, len(ids))):
+            entry_id = ids[i]
+            metadata = metadatas[i] if i < len(metadatas) else None
+            embedding = embeddings[i] if i < len(embeddings) else None
+
+            print(f"ID: {entry_id}")
+            print(f"Metadata: {metadata}")
+            if embedding:
+                print(f"Embedding Sample (first 5 values): {embedding[:13]}")
+            else:
+                print("Embedding: None")
+            print("-" * 40)
+
+    except Exception as e:
+        print(f"Error fetching CV collection: {e}")
+
+
+def show_all_jds():
+    print("\n===== JD COLLECTION =====")
+    try:
+        jd_results = jd_collection.get()
+
+        ids = jd_results.get("ids", [])
+        metadatas = jd_results.get("metadatas", [])
+        embeddings = jd_results.get("embeddings", [])
+
+        print(f"Total JD Entries: {len(ids)}")
+
+        for i in range(min(5, len(ids))):
+            entry_id = ids[i]
+            metadata = metadatas[i] if i < len(metadatas) else None
+            embedding = embeddings[i] if i < len(embeddings) else None
+
+            print(f"ID: {entry_id}")
+            print(f"Metadata: {metadata}")
+            if embedding:
+                print(f"Embedding Sample (first 5 values): {embedding[:5]}")
+            else:
+                print("Embedding: None")
+            print("-" * 40)
+
+    except Exception as e:
+        print(f"Error fetching JD collection: {e}")
+
+
+#show_all_cvs()
+#show_all_jds()
 
 if __name__ == "__main__":
     import uvicorn
