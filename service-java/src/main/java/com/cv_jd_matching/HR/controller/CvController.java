@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,7 +24,7 @@ public class CvController {
     }
 
     @RequestMapping(method = RequestMethod.DELETE, value = "/delete")
-    public ResponseEntity<?> deleteSelectedCvs(@RequestParam("names") List<Integer> ids){
+    public ResponseEntity<?> deleteSelectedCvs(@RequestBody List<Integer> ids){
         cvService.deleteFiles(ids);
         return new ResponseEntity<>("Successfully deleted files", HttpStatus.OK);
     }

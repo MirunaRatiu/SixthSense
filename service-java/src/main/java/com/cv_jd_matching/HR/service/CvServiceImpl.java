@@ -29,13 +29,13 @@ public class CvServiceImpl implements CvService{
     public void deleteFiles(List<Integer> ids){
         List<Cv> cvs = ids.stream().map(id -> cvRepository.findById(id).get()).toList();
         cvRepository.deleteAll(cvs);
-        for(Integer id: ids){
+        /*for(Integer id: ids){
             webClient.method(HttpMethod.DELETE)
                     .uri("/delete/cv")
                     .bodyValue(id)
                     .retrieve()
                     .bodyToMono(String.class).subscribe();
-        }
+        }*/
     }
 
     public CvDTO getCvByPath(String path){

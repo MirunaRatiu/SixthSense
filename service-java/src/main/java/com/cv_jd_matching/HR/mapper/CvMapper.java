@@ -3,6 +3,13 @@ package com.cv_jd_matching.HR.mapper;
 import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.CvViewDTO;
 import com.cv_jd_matching.HR.entity.Cv;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class CvMapper {
     public static CvDTO mapEntityToDTO(Cv cv){
@@ -22,7 +29,24 @@ public class CvMapper {
         return CvViewDTO.builder()
                 .name(cv.getName())
                 .id(cv.getId())
-                .skills(cv.getTechnicalSkills().stream().reduce("", (a, b) -> a + b)) // this will be changed
+                .skills(splitString(cv.getTechnicalSkills())) // this will be changed
                 .build();
+    }
+
+    private static List<String> splitString(String jsonString){
+        String json = jsonString
+                .replace("=", ":")
+                .replaceAll("([a-zA-Z ]+):", "\"$1\":")
+                .replaceAll(":([^\",}\\]]+)", ":\"$1\"");
+        Gson gson = new Gson();
+        Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
+        List<Map<String, String>> skillList = gson.fromJson(json, listType);
+
+        // Extract skill values
+        List<String> skills = new ArrayList<>();
+        for (Map<String, String> skillMap : skillList) {
+            skills.add(skillMap.get("skill"));
+        }
+        return skills;
     }
 }
