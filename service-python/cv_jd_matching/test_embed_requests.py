@@ -22,7 +22,7 @@ def test_embed_cv():
 
 def test_embed_jd():
     payload = {
-        "id": 42,
+        "id": 46,
         "jobTitle": "AI Engineer",
         "companyOverview": "Tech startup",
         "keyResponsibilities": "Build ML pipelines",

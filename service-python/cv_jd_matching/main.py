@@ -59,6 +59,7 @@ async def embed_sections_cv(request: CvDTO):
         embedding_counter += 1
 
     try:
+        # Prepare sections
         sections = {
             "technicalSkills": request.technicalSkills,
             "foreignLanguages": request.foreignLanguages,
@@ -68,16 +69,40 @@ async def embed_sections_cv(request: CvDTO):
             "workExperience": request.workExperience,
             "others": request.others,
         }
-        # Filter out None or empty sections
-        valid_sections = {k: v for k, v in sections.items() if v}
 
-        # Generate embeddings
+        # Filter out empty sections
+        valid_sections = {k: v for k, v in sections.items() if v}
         texts = list(valid_sections.values())
         section_names = list(valid_sections.keys())
-        embeddings = embedding_model.encode(texts)
 
-        # Store embeddings in the appropriate collection
-        for i, (section_name, embedding) in enumerate(zip(section_names, embeddings)):
+        if not texts:
+            raise HTTPException(status_code=400, detail="No valid sections provided for embedding.")
+
+        # Encode texts
+        try:
+            embeddings = embedding_model.encode(texts)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Embedding model error: {str(e)}")
+
+        # Check model output type and content
+        if embeddings is None or not isinstance(embeddings, (list, np.ndarray)):
+            raise HTTPException(status_code=500, detail="Model returned invalid embedding format.")
+        if any(e is None for e in embeddings):
+            raise HTTPException(status_code=500, detail="One or more embeddings returned None.")
+
+        # Extra validation and logging
+        print(f"[DEBUG] Computed {len(embeddings)} embeddings for CV ID {request.id}")
+        for i, emb in enumerate(embeddings):
+            if not isinstance(emb, (list, np.ndarray)):
+                raise HTTPException(status_code=500, detail=f"Embedding at index {i} is not a list or array.")
+            if len(emb) == 0:
+                raise HTTPException(status_code=500, detail=f"Embedding at index {i} is empty.")
+            print(f"[DEBUG] Embedding {i} preview: {emb[:5]}")
+
+        # Store embeddings
+        for section_name, embedding in zip(section_names, embeddings):
+            if embedding is None:
+                continue  # Just in case, but shouldn't happen
             cv_collection.add(
                 ids=[f"{request.id}_{section_name}"],
                 embeddings=[embedding.tolist()],
@@ -86,14 +111,17 @@ async def embed_sections_cv(request: CvDTO):
                     "section_name": section_name
                 }]
             )
+
         return "success"
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"CV embedding failed: {str(e)}")
+
     finally:
         async with condition:
             embedding_counter -= 1
             if embedding_counter == 0:
-                condition.notify_all()  # Wake any match waiting
+                condition.notify_all()
 
 @app.post("/embed/jd")
 async def embed_sections_jd(request: JobDescriptionDTO):
@@ -102,6 +130,7 @@ async def embed_sections_jd(request: JobDescriptionDTO):
         embedding_counter += 1
 
     try:
+        # Prepare sections
         sections = {
             "jobTitle": request.jobTitle,
             "companyOverview": request.companyOverview,
@@ -109,16 +138,40 @@ async def embed_sections_jd(request: JobDescriptionDTO):
             "requiredQualifications": request.requiredQualifications,
             "preferredSkills": request.preferredSkills,
         }
-        # Filter out None or empty sections
-        valid_sections = {k: v for k, v in sections.items() if v}
 
-        # Generate embeddings
+        # Filter out empty sections
+        valid_sections = {k: v for k, v in sections.items() if v}
         texts = list(valid_sections.values())
         section_names = list(valid_sections.keys())
-        embeddings = embedding_model.encode(texts)
 
-        # Store embeddings in the appropriate collection
-        for i, (section_name, embedding) in enumerate(zip(section_names, embeddings)):
+        if not texts:
+            raise HTTPException(status_code=400, detail="No valid sections provided for embedding.")
+
+        # Encode texts
+        try:
+            embeddings = embedding_model.encode(texts)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Embedding model error: {str(e)}")
+
+        # Check model output type and content
+        if embeddings is None or not isinstance(embeddings, (list, np.ndarray)):
+            raise HTTPException(status_code=500, detail="Model returned invalid embedding format.")
+        if any(e is None for e in embeddings):
+            raise HTTPException(status_code=500, detail="One or more embeddings returned None.")
+
+        # Extra validation and logging
+        print(f"[DEBUG] Computed {len(embeddings)} embeddings.")
+        for i, emb in enumerate(embeddings):
+            if not isinstance(emb, (list, np.ndarray)):
+                raise HTTPException(status_code=500, detail=f"Embedding at index {i} is not a list or array.")
+            if len(emb) == 0:
+                raise HTTPException(status_code=500, detail=f"Embedding at index {i} is empty.")
+            print(f"[DEBUG] Embedding {i} preview: {emb[:5]}")
+
+        # Store embeddings
+        for section_name, embedding in zip(section_names, embeddings):
+            if embedding is None:
+                continue  # Shouldn't happen, but fail-safe
             jd_collection.add(
                 ids=[f"{request.id}_{section_name}"],
                 embeddings=[embedding.tolist()],
@@ -127,14 +180,17 @@ async def embed_sections_jd(request: JobDescriptionDTO):
                     "section_name": section_name
                 }]
             )
+
         return "success"
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"JD embedding failed: {str(e)}")
+
     finally:
         async with condition:
             embedding_counter -= 1
             if embedding_counter == 0:
-                condition.notify_all()  # Wake any match waiting
+                condition.notify_all()
 
 # @app.post("/match/jd", response_model=MatchResponse)
 # async def match_cv_to_jd(request: MatchRequest):
@@ -167,11 +223,16 @@ async def embed_sections_jd(request: JobDescriptionDTO):
 async def delete_by_id(item_type: str, item_id: int = Body(...)):
     """
     Delete all vectors in the specified collection (cv or jd) for the given item_id.
+    Waits for all embedding operations to finish before deleting.
     """
     if item_type not in ["cv", "jd"]:
         raise HTTPException(status_code=400, detail="item_type must be 'cv' or 'jd'")
 
     collection = cv_collection if item_type == "cv" else jd_collection
+
+    # Wait until all embeddings are finished
+    async with condition:
+        await condition.wait_for(lambda: embedding_counter == 0)
 
     try:
         # Get all entries in the collection
@@ -190,6 +251,7 @@ async def delete_by_id(item_type: str, item_id: int = Body(...)):
         collection.delete(ids=ids_to_delete)
 
         return {"status": "success", "deleted_ids": ids_to_delete}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -197,11 +259,12 @@ async def delete_by_id(item_type: str, item_id: int = Body(...)):
 def show_all_cvs():
     print("===== CV COLLECTION =====")
     try:
-        cv_results = cv_collection.get()
+        # Explicitly request embeddings and metadata
+        cv_results = cv_collection.get(include=["embeddings", "metadatas"])
 
-        ids = cv_results.get("ids") or []
-        metadatas = cv_results.get("metadatas") or []
-        embeddings = cv_results.get("embeddings") or []
+        ids = cv_results.get("ids", [])
+        metadatas = cv_results.get("metadatas", [])
+        embeddings = cv_results.get("embeddings", [])
 
         print(f"Total CV Entries: {len(ids)}")
 
@@ -212,8 +275,8 @@ def show_all_cvs():
 
             print(f"ID: {entry_id}")
             print(f"Metadata: {metadata}")
-            if embedding:
-                print(f"Embedding Sample (first 5 values): {embedding[:13]}")
+            if embedding is not None and len(embedding) > 0:
+                print(f"Embedding Sample (first 13 values): {embedding[:13]}")
             else:
                 print("Embedding: None")
             print("-" * 40)
@@ -225,7 +288,7 @@ def show_all_cvs():
 def show_all_jds():
     print("\n===== JD COLLECTION =====")
     try:
-        jd_results = jd_collection.get()
+        jd_results = jd_collection.get(include=["embeddings", "metadatas"])
 
         ids = jd_results.get("ids", [])
         metadatas = jd_results.get("metadatas", [])
@@ -233,14 +296,14 @@ def show_all_jds():
 
         print(f"Total JD Entries: {len(ids)}")
 
-        for i in range(min(5, len(ids))):
+        for i in range(min(15, len(ids))):
             entry_id = ids[i]
             metadata = metadatas[i] if i < len(metadatas) else None
             embedding = embeddings[i] if i < len(embeddings) else None
 
             print(f"ID: {entry_id}")
             print(f"Metadata: {metadata}")
-            if embedding:
+            if embedding is not None and len(embedding) > 0:
                 print(f"Embedding Sample (first 5 values): {embedding[:5]}")
             else:
                 print("Embedding: None")
@@ -255,4 +318,6 @@ def show_all_jds():
 
 if __name__ == "__main__":
     import uvicorn
+
+    show_all_cvs()
     uvicorn.run(app, host="127.0.0.1", port=8081)
