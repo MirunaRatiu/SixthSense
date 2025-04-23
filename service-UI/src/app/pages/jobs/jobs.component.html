@@ -1,0 +1,172 @@
+<div class="jobs-page animate-fadeIn">
+  <!-- Header with title and notification badge -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Jobs <span class="notification-badge" data-count="1"></span></h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-danger" [disabled]="!hasSelectedJobs()" (click)="deleteSelectedJobs()">
+        <i class="pi pi-trash"></i> Delete Selected
+      </button>
+    </div>
+  </div>
+
+  <!-- CV Upload Area -->
+  <div class="upload-area" 
+       [class.active]="isDragOver" 
+       (dragover)="onDragOver($event)" 
+       (dragleave)="onDragLeave($event)" 
+       (drop)="onDrop($event)">
+    <div class="upload-content">
+      <i class="pi pi-cloud-upload upload-icon"></i>
+      <h3 class="upload-title">Upload CV Files</h3>
+      <p class="upload-hint">Drag & drop your CV files here or click to browse</p>
+      <input type="file" 
+             #fileInput 
+             multiple 
+             accept=".pdf,.doc,.docx" 
+             class="file-input" 
+             (change)="onFileSelected($event)">
+      <button class="btn btn-primary upload-btn" (click)="fileInput.click()">
+        <i class="pi pi-upload"></i> Browse Files
+      </button>
+    </div>
+  </div>
+
+  <!-- Uploaded Files Preview -->
+  <div class="uploaded-files" *ngIf="uploadedFiles.length > 0">
+    <h3 class="section-title">Uploaded Files</h3>
+    <div class="files-grid">
+      <div class="file-card" *ngFor="let file of uploadedFiles; let i = index">
+        <div class="file-icon">
+          <i class="pi" [ngClass]="getFileIcon(file)"></i>
+        </div>
+        <div class="file-info">
+          <div class="file-name">{{ file.name }}</div>
+          <div class="file-size">{{ formatFileSize(file.size) }}</div>
+        </div>
+        <button class="file-remove" (click)="removeFile(i)">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    </div>
+    <div class="upload-actions">
+      <button class="btn btn-success" (click)="processFiles()">
+        <i class="pi pi-check"></i> Process Files
+      </button>
+      <button class="btn btn-outline" (click)="clearFiles()">
+        <i class="pi pi-trash"></i> Clear All
+      </button>
+    </div>
+  </div>
+
+  <!-- Jobs table -->
+  <div class="table-container card">
+    <table class="jobs-table">
+      <thead>
+        <tr>
+          <th class="checkbox-col">
+            <div class="custom-checkbox" [class.checked]="allSelected" (click)="toggleSelectAll()"></div>
+          </th>
+          <th class="sortable-col">
+            Position Name
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Job Department
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Job Location
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Headcount
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Job Stage
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Minimum Salary
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Maximum Salary
+            <i class="pi pi-sort"></i>
+          </th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let job of jobs; let i = index" (click)="viewJobMatches(job)" class="clickable-row">
+          <td class="checkbox-col" (click)="$event.stopPropagation()">
+            <div class="custom-checkbox" 
+                 [class.checked]="job.selected" 
+                 (click)="toggleJobSelection(i)"></div>
+          </td>
+          <td class="position-col">
+            <div class="position-info">
+              <div class="status-dot" [ngClass]="getStatusDotClass(job)"></div>
+              <span>{{ job.positionName }}</span>
+            </div>
+          </td>
+          <td class="department-col">
+            <div class="department-badge">
+              <div class="department-icon" [ngClass]="getDepartmentClass(job)">
+                <i class="pi" [ngClass]="getDepartmentIcon(job)"></i>
+              </div>
+              <span>{{ getDepartment(job) }}</span>
+            </div>
+          </td>
+          <td>{{ job.location }}</td>
+          <td>{{ job.headcount }}</td>
+          <td>
+            <span class="badge" [ngClass]="getJobStageBadgeClass(job.stage)">{{ job.stage }}</span>
+          </td>
+          <td>{{ job.salary ? job.salary : 'Negotiable' }}</td>
+          <td>{{ getMaxSalary(job) }}</td>
+          <td>
+            <button class="btn btn-primary btn-sm" (click)="$event.stopPropagation(); viewJobMatches(job)">
+              <i class="pi pi-users"></i> Find Matches
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <div class="pagination-info">
+      <span>Results per page:</span>
+      <select [(ngModel)]="rows" (change)="onRowsChange()">
+        <option [value]="10">10</option>
+        <option [value]="20">20</option>
+        <option [value]="50">50</option>
+      </select>
+      <span>1-{{ jobs.length > rows ? rows : jobs.length }} of {{ totalRecords }}</span>
+    </div>
+    <div class="pagination-controls">
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-double-left"></i>
+      </button>
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-left"></i>
+      </button>
+      <button class="pagination-btn active">1</button>
+      <button class="pagination-btn">2</button>
+      <button class="pagination-btn">3</button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-right"></i>
+      </button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-double-right"></i>
+      </button>
+    </div>
+    <div class="total-records">
+      {{ totalRecords }} total jobs
+    </div>
+  </div>
+</div>

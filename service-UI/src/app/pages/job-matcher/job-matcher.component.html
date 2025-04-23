@@ -1,0 +1,192 @@
+<div class="jobs-page animate-fadeIn" *ngIf="selectedJob">
+  <!-- Header with title and back button -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Job Matcher: {{ selectedJob.positionName }}</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="goBack()">
+        <i class="pi pi-arrow-left"></i> Back to Jobs
+      </button>
+    </div>
+  </div>
+
+  <!-- Job Details Card -->
+  <div class="card job-details-card">
+    <div class="job-details-header">
+      <h2>Job Details</h2>
+    </div>
+    <div class="job-details-content">
+      <div class="job-info-section">
+        <div class="job-info-row">
+          <div class="job-info-label">Position:</div>
+          <div class="job-info-value">{{ selectedJob.positionName }}</div>
+        </div>
+        <div class="job-info-row">
+          <div class="job-info-label">Client:</div>
+          <div class="job-info-value">{{ selectedJob.client }}</div>
+        </div>
+        <div class="job-info-row">
+          <div class="job-info-label">Location:</div>
+          <div class="job-info-value">{{ selectedJob.location }}</div>
+        </div>
+        <div class="job-info-row">
+          <div class="job-info-label">Headcount:</div>
+          <div class="job-info-value">{{ selectedJob.headcount }}</div>
+        </div>
+        <div class="job-info-row">
+          <div class="job-info-label">Stage:</div>
+          <div class="job-info-value">
+            <span class="badge" [ngClass]="{'badge-success': selectedJob.stage}">{{ selectedJob.stage || 'OPEN' }}</span>
+          </div>
+        </div>
+        <div class="job-info-row" *ngIf="selectedJob.salary">
+          <div class="job-info-label">Salary:</div>
+          <div class="job-info-value">{{ selectedJob.salary }}</div>
+        </div>
+      </div>
+      
+      <div class="job-description-section">
+        <h3>Job Description</h3>
+        <p>{{ selectedJob.description }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills Management Card -->
+  <div class="card skills-card">
+    <div class="skills-header">
+      <h2>Required Skills</h2>
+      <div class="skills-actions">
+        <div class="add-skill-form">
+          <input type="text" [(ngModel)]="newSkill" placeholder="Add new skill" class="skill-input" (keyup.enter)="addSkill()">
+          <button class="btn btn-primary" (click)="addSkill()">
+            <i class="pi pi-plus"></i> Add
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="skills-content">
+      <p class="skills-hint">Adjust the importance of each skill to find better matches</p>
+      
+      <div class="skills-list">
+        <div class="skill-weight-item" *ngFor="let skill of skillWeights; let i = index">
+          <div class="skill-weight-header">
+            <span class="skill-name">{{ skill.name }}</span>
+            <div class="skill-actions">
+              <span class="skill-weight-value" [ngClass]="getSkillLevelClass(skill.weight)">{{ skill.weight }}%</span>
+              <button class="btn-icon btn-remove" (click)="removeSkill(i)">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="skill-weight-slider">
+            <p-slider [(ngModel)]="skill.weight" [min]="0" [max]="100" (onChange)="updateSkillWeight(skill)"></p-slider>
+          </div>
+        </div>
+      </div>
+      
+      <div class="skills-footer">
+        <button class="btn btn-primary" (click)="findMatches()" [disabled]="loading">
+          <i class="pi" [ngClass]="loading ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
+          {{ loading ? 'Finding Matches...' : 'Refresh Matches' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Matching Candidates Table -->
+  <div class="table-container card">
+    <table class="jobs-table">
+      <thead>
+        <tr>
+          <th class="sortable-col">
+            Candidate Name
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Experience
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Education
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Skills
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Match Score
+            <i class="pi pi-sort"></i>
+          </th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let candidate of matchingCandidates">
+          <td>{{ candidate.name }}</td>
+          <td>{{ candidate.experience }} years</td>
+          <td>{{ candidate.education }}</td>
+          <td>
+            <div class="candidate-skills">
+              <span *ngFor="let skill of candidate.skills.slice(0, 3)" class="skill-tag">{{ skill }}</span>
+              <span *ngIf="candidate.skills.length > 3" class="skill-tag">+{{ candidate.skills.length - 3 }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="match-score-container">
+              <div class="match-score-bar" [style.width.%]="candidate.matchScore"></div>
+              <span class="match-score-value" [ngClass]="{
+                'match-score-high': candidate.matchScore >= 80,
+                'match-score-medium': candidate.matchScore >= 60 && candidate.matchScore < 80,
+                'match-score-low': candidate.matchScore < 60
+              }">{{ candidate.matchScore }}%</span>
+            </div>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline">
+              <i class="pi pi-eye"></i> View
+            </button>
+            <button class="btn btn-sm btn-primary">
+              <i class="pi pi-envelope"></i> Contact
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container">
+    <div class="pagination-info">
+      <span>Results per page:</span>
+      <select [(ngModel)]="rows" (change)="onRowsChange()">
+        <option [value]="10">10</option>
+        <option [value]="20">20</option>
+        <option [value]="50">50</option>
+      </select>
+      <span>1-{{ matchingCandidates.length > rows ? rows : matchingCandidates.length }} of {{ totalRecords }}</span>
+    </div>
+    <div class="pagination-controls">
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-double-left"></i>
+      </button>
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-left"></i>
+      </button>
+      <button class="pagination-btn active">1</button>
+      <button class="pagination-btn">2</button>
+      <button class="pagination-btn">3</button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-right"></i>
+      </button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-double-right"></i>
+      </button>
+    </div>
+    <div class="total-records">
+      {{ totalRecords }} total candidates
+    </div>
+  </div>
+</div>

@@ -1,0 +1,103 @@
+<div class="page-header">
+  <h1>CV-Job Matcher</h1>
+  <p>Upload a CV to find the best matching job</p>
+</div>
+
+<div class="grid">
+  <div class="col-12 md:col-5">
+    <p-card header="Upload CV">
+      <form [formGroup]="cvForm">
+        <div class="field mb-3">
+          <label for="name" class="block mb-2">Candidate Name</label>
+          <input id="name" type="text" pInputText formControlName="name" class="w-full" />
+          <small *ngIf="cvForm.get('name')?.invalid && cvForm.get('name')?.touched" class="p-error">
+            Name is required
+          </small>
+        </div>
+
+        <div class="field mb-3">
+          <label class="block mb-2">CV Upload</label>
+          <p-fileUpload 
+            mode="basic" 
+            chooseLabel="Browse" 
+            [auto]="true"
+            accept=".pdf,.doc,.docx"
+            [maxFileSize]="1000000"
+            (uploadHandler)="onUpload($event)"
+            [customUpload]="true"
+            class="w-full">
+          </p-fileUpload>
+          <small *ngIf="!cvUploaded && submitted" class="p-error">
+            Please upload a CV
+          </small>
+        </div>
+
+        <div class="field mb-3">
+          <label for="skills" class="block mb-2">Skills (comma separated)</label>
+          <input id="skills" type="text" pInputText formControlName="skills" class="w-full" />
+        </div>
+
+        <div class="field mb-3">
+          <label for="experience" class="block mb-2">Experience (years)</label>
+          <input id="experience" type="number" pInputText formControlName="experience" class="w-full" />
+        </div>
+
+        <button pButton type="button" label="Find Matching Jobs" [disabled]="cvForm.invalid || !cvUploaded" class="w-full" (click)="findMatches()"></button>
+      </form>
+    </p-card>
+  </div>
+
+  <div class="col-12 md:col-7">
+    <p-card header="Best Matching Jobs" *ngIf="matchingJobs.length > 0">
+      <p-table [value]="matchingJobs" [tableStyle]="{'min-width': '50rem'}">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Position</th>
+            <th>Company</th>
+            <th>Required Skills</th>
+            <th>Match Score</th>
+            <th>Actions</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-job>
+          <tr>
+            <td>{{ job.positionName }}</td>
+            <td>
+              <div class="flex align-items-center">
+                <img [src]="job.clientLogo || '/placeholder.svg'" width="24" height="24" class="mr-2" />
+                <span>{{ job.client }}</span>
+              </div>
+            </td>
+            <td>
+              <span *ngFor="let skill of job.requiredSkills.slice(0, 3)" class="skill-tag">{{ skill }}</span>
+              <span *ngIf="job.requiredSkills.length > 3">+{{ job.requiredSkills.length - 3 }} more</span>
+            </td>
+            <td>
+              <div class="flex align-items-center">
+                <p-progressBar [value]="job.matchScore" [showValue]="false" [style]="{'height': '8px', 'width': '100px'}" class="mr-2"></p-progressBar>
+                <span>{{ job.matchScore }}%</span>
+              </div>
+            </td>
+            <td>
+              <button pButton icon="pi pi-eye" class="p-button-rounded p-button-text" pTooltip="View Job"></button>
+              <button pButton icon="pi pi-send" class="p-button-rounded p-button-text" pTooltip="Apply"></button>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="5" class="text-center">No matching jobs found</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+
+    <p-card *ngIf="matchingJobs.length === 0 && submitted" header="No Matches Found">
+      <div class="flex flex-column align-items-center justify-content-center p-5">
+        <i class="pi pi-search" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
+        <h3>No matching jobs found</h3>
+        <p>Try uploading a different CV or adjusting your skills</p>
+      </div>
+    </p-card>
+  </div>
+</div>

@@ -1,0 +1,38 @@
+<!-- 
+<header class="header">
+  <div class="header-left">
+    <button pButton icon="pi pi-bars" class="p-button-text menu-button"></button>
+    <div class="logo">M</div>
+  </div>
+  <div class="search-container">
+    <span class="p-input-icon-left">
+      <i class="pi pi-search"></i>
+      <input type="text" pInputText placeholder="Search by Name, Job, Email or Client" class="search-input" />
+    </span>
+  </div>
+  <div class="header-right">
+    <button pButton icon="pi pi-plus" class="p-button-rounded p-button-text"></button>
+    <button pButton icon="pi pi-question-circle" class="p-button-rounded p-button-text"></button>
+    <div class="notification-badge">
+      <button pButton icon="pi pi-bell" class="p-button-rounded p-button-text"></button>
+      <span class="badge">1</span>
+    </div>
+    <p-avatar label="S" styleClass="mr-2" [style]="{'background-color':'var(--primary-color)', 'color': '#ffffff'}"></p-avatar>
+  </div>
+</header>
+-->
+<header class="header">
+  <div class="header-left">
+    <button class="menu-toggle" (click)="toggleSidebar()">
+      <i class="pi pi-bars"></i>
+    </button>
+    <div class="logo">
+      <span>TalentMatch</span>
+    </div>
+  </div>
+  
+  <div class="search-container">
+    <i class="pi pi-search search-icon"></i>
+    <input type="text" class="search-input" placeholder="Search jobs, candidates, or clients" />
+  </div>
+</header>
