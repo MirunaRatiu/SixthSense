@@ -22,17 +22,17 @@ public class SymbolsManipulation {
         text = text.replace("Â", "\\u00C2");
         text = text.replace("'", "\\u0027");
         text = text.replace("’", "\\u2019");
-        text = text.replaceAll( "\"","\\u0022");
+        //text = text.replace( "\"","\\u0022");
 
-        text = text.replace("/", "\\u002F");
-        text = text.replace("I", "\\u0049");
-        text = text.replace("|", "\\u007C");
+        //text = text.replace("/", "\\u002F");
+        //text = text.replace("I", "\\u0049");
+        //text = text.replace("|", "\\u007C");
 
-        text = text.replace("\\u2018", "‘");
-        text = text.replace("\\u201C", "“");
-        text = text.replace("\\u201D", "”");
-        text = text.replace("\\u201A", "‚");
-        text = text.replace("\\u201B", "‛");
+        text = text.replace( "‘","\\u2018");
+        text = text.replace("“","\\u201C");
+        text = text.replace( "”","\\u201D");
+        //text = text.replace( "‚","\\u201A");
+        text = text.replace("‛","\\u201B");
 
 
 //        text = text.replace("\\", "\\u005C");
@@ -61,17 +61,17 @@ public class SymbolsManipulation {
         text = text.replace("\\u00C2", "Â");
         text = text.replace("\\u0027", "'");
         text = text.replace("\\u2019", "’");
-        text = text.replaceAll("\\u0022", "\"");
+        //text = text.replace("\\u0022", "\"");
 
 
-        text = text.replace( "\\u002F","/");
-        text = text.replace("\\u0049","I");
-        text = text.replace( "\\u007C","|");
+        //text = text.replace( "\\u002F","/");
+        //text = text.replace("\\u0049","I");
+        //text = text.replace( "\\u007C","|");
 
         text = text.replace("\\u2018", "‘");
         text = text.replace("\\u201C", "“");
         text = text.replace("\\u201D", "”");
-        text = text.replace("\\u201A", "‚");
+        //text = text.replace("\\u201A", "‚");
         text = text.replace("\\u201B", "‛");
 
 //        text = text.replace("\\u005C", "\\");
