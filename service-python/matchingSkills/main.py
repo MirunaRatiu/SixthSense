@@ -330,27 +330,63 @@ SYNONYM_MAP = {
                         "cloud deployment", "serverless", "docker", "kubernetes", "ci/cd", "terraform", "cloud", "cloud services", "cloud platform", "cloud architecture"],
     "agile methodology": ["agile", "scrum", "kanban", "jira", "sprint", "lean"],
     "database management": ["sql", "mysql", "postgresql", "oracle", "mongodb", "nosql", "database design",
-                            "query optimization"]
+                            "query optimization"],
+"databases": ["sql", "mysql", "postgresql", "oracle", "mongodb", "nosql", "database design",
+                            "query optimization"],
+"mobile": [
+    "flutter",
+    "dart ui framework",
+    "cross-platform mobile",
+    "react native",
+    "javascript mobile framework",
+    "swift",
+    "ios development",
+    "iphone app development",
+    "kotlin",
+    "android development",
+    "android apps",
+    "java android",
+    "android native development",
+    "java mobile apps",
+    "objective-c",
+    "legacy ios development",
+    "xamarin",
+    "c# mobile apps",
+    "android studio",
+    "android development environment",
+    "xcode",
+    "ios development environment",
+    "firebase",
+    "mobile backend services",
+    "authentication and database for mobile apps",
+    "rest api",
+    "api integration mobile",
+    "backend communication mobile apps"
+  ]
 
 }
 def normalize(text):
     """Normalizează textul: minuscule, elimină spațiile de la început/sfârșit."""
     return text.lower().strip() if isinstance(text, str) else ""
 
+def split_terms(text):
+    """Împarte textul în termeni, inclusiv elemente cu caractere speciale."""
+    # Spargem pe orice spațiu sau delimitator de propoziție, dar păstrăm termeni cu . sau +
+    return re.findall(r'\w[\w\+\#\.]*', text.lower())
+
 def extract_text(item):
-    """Extrage textul relevant (skill/task/requirement) dintr-un item din JD."""
-    # Prioritizează skill-uri tehnice dacă sunt marcate
     for key in ["skill", "task", "requirement"]:
         if key in item:
             text = normalize(item[key])
-            # Simplificare: Verificăm dacă textul conține *vreun* cuvânt cheie tehnic
-            # Pentru o logică mai fină, am putea returna cuvântul cheie specific găsit
-            if any(re.search(r'\b' + re.escape(kw) + r'\b', text, re.IGNORECASE) for kw in TECHNICAL_KEYWORDS):
-                 print(f"Extracting TECHNICAL text: '{text}'")
-                 return text # Returnează textul complet dacă e tehnic
+            text_terms = split_terms(text)
+            skill_terms = [normalize(kw) for kw in TECHNICAL_KEYWORDS]
+
+            if any(term in text_terms for term in skill_terms):
+                print(f"Extracting TECHNICAL text: '{text}'")
+                return text
             else:
                 print(f"Extracting NON-TECHNICAL text: '{text}'")
-                return text # Returnează textul complet și dacă nu e tehnic
+                return text
     print(f"Warning: No skill/task/requirement key found in item: {item}")
     return ""
 
@@ -431,8 +467,8 @@ def prioritized_flatten(cv):
     sections_for_fallback = {
         "education": ["institution", "degree", "field_of_study"], # Adaugă câmpuri relevante
         "others": None, # Procesează toate valorile din 'others'
-        "project_experience": ["title"], # Extrage doar titlul din proiecte ca fallback
-        "work_experience": ["title", "company"], # Extrage titlu/companie din work ca fallback
+        "project_experience": ["title", "description"], # Extrage doar titlul din proiecte ca fallback
+        "work_experience": ["title", "company", "description"], # Extrage titlu/companie din work ca fallback
         "certifications": ["institution"] # Extrage instituția certificatului ca fallback (numele e deja adăugat)
         # Adaugă/elimină secțiuni/câmpuri după nevoie
     }
@@ -615,15 +651,18 @@ def is_text_match_priority(needle, sources, model, cache=None,
 
     # 2. Verificare Cuvinte Cheie Tehnice directe (potrivire cuvânt întreg)
     # Extragem cuvintele cheie tehnice *din needle*
-    needle_keywords = [kw for kw in TECHNICAL_KEYWORDS if re.search(r'\b' + re.escape(kw) + r'\b', needle, re.IGNORECASE)]
+    terms_in_needle = split_terms(needle)
+    needle_keywords = [kw for kw in TECHNICAL_KEYWORDS if normalize(kw) in terms_in_needle]
+
     if needle_keywords:
         print(f"  (Cuvinte cheie tehnice în needle: {needle_keywords})")
         for i, source in enumerate(sources):
             source_name = ["TechSkills", "ProjectTech", "WorkTech", "CertTech", "ExperienceDesc","FallbackTexts"][i]
             for text in source:
+                terms_in_text = split_terms(text)
                 for keyword in needle_keywords:
                     # Căutăm cuvântul cheie exact (ca un cuvânt întreg) în textul sursă
-                    if re.search(r'\b' + re.escape(keyword) + r'\b', text, re.IGNORECASE):
+                    if normalize(keyword) in terms_in_text:
                         print(f"  ✅ Potrivire CUVÂNT CHEIE: '{keyword}' găsit în '{text}' (Sursa: {source_name}) pentru '{needle}'.")
                         cache[needle] = True
                         return True
@@ -793,35 +832,18 @@ def score_only_preferred_skills(jd_preferred_skills_list, cv, model):
 jd_json = json.dumps({
     "preferred_skills": [
     {
-      "original_statement": "Familiarity with cloud platforms such as AWS, Azure, or Google Cloud.",
+      "original_statement": "Experience with front-end development technologies such as HTML, CSS, and JavaScript.",
       "group": [
         {
           "group": [
             {
-              "skill": "Familiarity with cloud platforms such as AWS"
+              "skill": "Experience with front-end development technologies such as HTML"
             },
             {
-              "skill": "Familiarity with cloud platforms such as Azure"
+              "skill": "Experience with front-end development technologies such as CSS"
             },
             {
-              "skill": "Familiarity with cloud platforms such as Google Cloud"
-            }
-          ],
-          "group_type": "OR"
-        }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Experience with containerization technologies like Docker and Kubernetes.",
-      "group": [
-        {
-          "group": [
-            {
-              "skill": "Experience with containerization technologies like Docker"
-            },
-            {
-              "skill": "Experience with containerization technologies like Kubernetes"
+              "skill": "Experience with front-end development technologies such as JavaScript"
             }
           ],
           "group_type": "AND"
@@ -830,15 +852,15 @@ jd_json = json.dumps({
       "group_type": "AND"
     },
     {
-      "original_statement": "Knowledge of microservices architecture and implementation.",
+      "original_statement": "Familiarity with agile methodologies and working in an agile environment.",
       "group": [
         {
           "group": [
             {
-              "skill": "Knowledge of microservices architecture"
+              "skill": "Familiarity with agile methodologies"
             },
             {
-              "skill": "Knowledge of microservices implementation"
+              "skill": "Working in an agile environment"
             }
           ],
           "group_type": "AND"
@@ -847,32 +869,22 @@ jd_json = json.dumps({
       "group_type": "AND"
     },
     {
-      "original_statement": "Understanding of Agile methodologies and experience working in Agile environments.",
-      "group": [
-        {
-          "group": [
-            {
-              "skill": "Understanding of Agile methodologies"
-            },
-            {
-              "skill": "Experience working in Agile environments"
-            }
-          ],
-          "group_type": "AND"
-        }
-      ],
-      "group_type": "AND"
+      "original_statement": "Knowledge of accessibility standards and best practices in design.",
+      "skill": "Knowledge of accessibility standards and best practices in design"
     },
     {
-      "original_statement": "Excellent communication skills and ability to work collaboratively in a team setting.",
+      "original_statement": "Experience in designing for a variety of platforms, including web, mobile, and emerging technologies like AR/VR.",
       "group": [
         {
           "group": [
             {
-              "skill": "Excellent communication skills"
+              "skill": "Experience in designing for web"
             },
             {
-              "skill": "Ability to work collaboratively in a team setting"
+              "skill": "Experience in designing for mobile"
+            },
+            {
+              "skill": "Experience with databases"
             }
           ],
           "group_type": "AND"
@@ -886,91 +898,123 @@ jd_json = json.dumps({
 # CV
 sara_cv_dict = {
     "technical_skills": [
-        {"skill": "Java"}, {"skill": "Python"}, {"skill": "SpringBoot"}, {"skill": "HTML"},
-        {"skill": "C++"}, {"skill": "CSS"}, {"skill": "MySQL"}, {"skill": "Git"}, {"skill": "Angular"}
-    ],
+  {"skill": "C"},
+  {"skill": "C++"},
+  {"skill": "Python"},
+  {"skill": "Java"},
+  {"skill": "SQL"},
+  {"skill": "HTML"},
+  {"skill": "CSS"},
+  {"skill": "VHDL"},
+  {"skill": "Django"},
+  {"skill": "Arduino"},
+  {"skill": "Jupyter Notebook"},
+  {"skill": "Vivado"},
+  {"skill": "Vitis"},
+  {"skill": "Git"}
+],
+
     "foreign_languages": [
-        {"language": "English", "proficiency": "fluent"},
-        {"language": "German", "proficiency": "classroom study"},
-        {"language": "Romanian", "proficiency": "native"}
+      {"language": "Romanian", "proficiency": "mother tongue"},
+      {"language": "English", "proficiency": "B2/Upper Intermediate level for CEFR"}
     ],
-    "education": [
-        {
-            "institution": "Technical University of Cluj-Napoca",
-            "degree": "Bachelor",
-            "field_of_study": "Computer Science",
-            "period": {"start_date": "2022-10", "end_date": "Present"},
-            "technologies": []
+"education": [
+      {
+        "institution": "Faculty of Automation and Computer Science, Technical University of Cluj-Napoca",
+        "degree": "Bachelor",
+        "field_of_study": "Automation and Computer Science",
+        "period": {
+          "start_date": "2022-10",
+          "end_date": "Present"
         }
-    ],
-    "certifications": [
-        {"name": "AWS Certified Developer - Associate", "institution": None, "technologies": []},
-        {"name": "Microsoft Certified: Azure Developer Associate", "institution": None, "technologies": []},
-        {"name": "Google Professional Cloud Developer", "institution": None, "technologies": []}
-    ],
-    "project_experience": [
-        {
-            "title": "SpringLibrary",
-            "description": "A web application that enables the management of books from a catalogue...",
-            "technologies": ["SpringBoot", "Spring Security", "Lombok", "Gradle", "Thymeleaf", "HTML"]
+      },
+      {
+        "institution": "Colegiul National \"Mihai Eminescu\" Petrosani",
+        "field_of_study": "Nature Sciences Intensive English",
+        "period": {
+          "start_date": "2018-09",
+          "end_date": "2022-07"
         }
+      }
     ],
-    "work_experience": [
-        {
-            "type": "job",
-            "title": "Intern Java Software Engineer",
-            "company": "Accesa",
-            "period": {"start_date": "2023-09"},
-            "description": ["During my one month at Accesa, I studied alongside a Senior Java Developer..."],
-            "technologies": ["Java", "SpringBoot"]
-        },
-        {
-            "type": "job",
-            "title": "Apprentice",
-            "company": "Accesa",
-            "period": {"start_date": "2021-07"},
-            "description": [
-                "This was a two week apprenticeship where I shadowed two Senior Java Developers and learned how the Agile methodology works."],
-            "technologies": []
-        }
-    ],
-    "others": {
-        "About Me": [
-            "The things that drive me are curiosity, ambition and a strong desire to become better than yesterday's version of myself.",
-            "I believe in kindness and authenticity, especially while working in team settings.",
-            "I have a strong sense of leadership, given that I have volunteered for 4 years as a team leader in a youth organization.",
-            "That is how I discovered that I thrive in environments where creativity, genuineness and hard work are valued.",
-            "That is what I'm searching for: a team with which I can create and work on amazing projects that make Monday mornings exciting."
-        ],
-        "Contact Information": [
-            {"Address": "Cluj-Napoca, Romania"},
-            {"Phone number": "+40737016376"},
-            {"Email": "molnar.sara.viviana@gmail.com"},
-            {"Website": "Portfolio Website"},
-            {"LinkedIn": "Linkedin"}
-        ],
-        "Hobbies": [
-            "Escaping into fictional worlds while reading.",
-            "Helping children discover their interests and strengths through Library volunteering.",
-            "Researching and soul-searching in order to write impactful articles and stories."
-        ],
-        "Interpersonal Skills": [
-            "Organization: As a Communications Manager for the Edubiz Association, I was responsible for creating the content calendar and coordinating the teams responsible for creating posts.",
-            "In this role, I developed effective communication skills to establish realistic schedules, manage situations where a team member did not complete their tasks, and prioritize and reallocate assignments to prevent significant gaps.",
-            "Additionally, I handled conflict resolution both within the team and between team members and senior management.",
-            "Adaptability and empathy: I developed these skills while volunteering in afterschool centers for young people aged 8 to 14.",
-            "Each week, I had to prepare engaging activities and select the most suitable ones based on their energy levels at the time.",
-            "Additionally, before the activities, I held sessions to help them with their homework. Through this experience, I learned to structure my thoughts and express them concisely, ensuring my explanations were clear and easy to understand.",
-            "Team leading: As a volunteer, I have coordinated multiple teams over time, such as:",
-            "- volunteer teams, for which I organized weekly meetings to plan activities for afterschool centers, ensured their participation in association-led workshops, and facilitated communication between them and my supervisors.",
-            "- the blog team, for which I organized and led weekly meetings where I provided feedback on previously written articles and assigned new tasks to team members."
-        ],
-        "Publications": [
-            "Timpul - avem si nu avem: In this article I explored the pitfalls of procrastination and how one can avoid going down the rabbit hole of time wasting.",
-            "1984 de George Orwell - impresii: This is my review for George Orwell's classic dystopian, 1984.",
-            "EduBiz lanseaza proiectul 'Aripi de file': This is the story of how I ended up coordinating a book club in my hometown."
-        ]
+  "certifications": [],
+  "project_experience": [
+    {
+      "title": "TicketFever: Event Reservation Platform",
+      "description": "Developed a web application for event reservations, allowing users to book, manage, and get notified about event changes.",
+      "technologies": ["Python", "Django", "HTML", "CSS", "JavaScript"]
+    },
+    {
+      "title": "Intelligent system for miner's helmet",
+      "description": "Built a system to protect coal mine workers from health hazards and possible explosions. It detects dangerous gases (methane or carbon monoxide), takes measures against high temperatures and features an automatic lighting system.",
+      "technologies": ["C++", "Arduino"]
+    },
+    {
+      "title": "Embedded Software for Image Binarization",
+      "description": "Developed an efficient image binarization system that converts grayscale images into images with only black and white values, by programming the FPGA on a SoC board (Pynq Z1).",
+      "technologies": ["VHDL", "Python", "Vivado", "Jupyter Notebook"]
     }
+  ],
+  "work_experience": [
+    {
+      "type": "competition",
+      "name": "WiDS Datathon++ University Edition",
+      "organization": "University Edition",
+      "period": {
+        "start_date": "2025-02",
+        "end_date": "Present"
+      },
+      "description": "Collaborating in a team to apply Machine Learning knowledge on real data sets."
+    },
+    {
+      "type": "competition",
+      "name": "Cloudflight Coding Contest",
+      "period": {
+        "date": "2023-10"
+      },
+      "description": "Learnt to work and communicate effectively in a team on the spot."
+    },
+    {
+      "type": "competition",
+      "name": "Cloudflight Coding Contest",
+      "period": {
+        "date": "2024-04"
+      },
+      "description": "Learnt to work and communicate effectively in a team on the spot."
+    },
+    {
+      "type": "job",
+      "title": "Cashier",
+      "company": "UNTOLD SRL",
+      "period": {
+        "start_date": "2023-08",
+        "end_date": "2023-08"
+      },
+      "description": "Gained experience with working with customers under pressure."
+    },
+    {
+      "type": "volunteer",
+      "title": "Volunteer",
+      "company": "Red Cross Romania",
+      "period": {
+        "start_date": "2020-01",
+        "end_date": "2021-12"
+      },
+      "description": "Developed teamwork and crisis response skills through first aid training."
+    }
+  ],
+  "others": {
+
+    "contact_information": {
+      "email": "lupulescu.lorenal7@gmail.com",
+      "phone_number": "0731127650"
+    },
+    "summary": [
+      "I approach challenges with creativity, patience, persistence and a problem-solving mindset.",
+      "Always eager to learn and grow, I embrace every opportunity to develop my skills and deliver exceptional results!",
+      "When I’m not immersed in the world of ones and zeros you can find me behind my camera capturing life’s beauty or outdoors seeking adventure through hiking or running."
+    ]
+  }
 }
 
 # Run
