@@ -12,4 +12,5 @@ public class CvViewDTO {
     private String name;
     private Integer id;
     private List<String> skills;
+    private String accessLink;
 }

@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class JobDescriptionViewDTO {
     private String jobTitle;
     private Integer id;
+    private String accessLink;
 }

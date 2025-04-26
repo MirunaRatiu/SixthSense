@@ -3,6 +3,7 @@ package com.cv_jd_matching.HR.service;
 import com.cv_jd_matching.HR.config.WebClientConfig;
 import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.JobDescriptionDTO;
+import com.cv_jd_matching.HR.dto.MatchRequestDTO;
 import com.cv_jd_matching.HR.entity.Cv;
 import com.cv_jd_matching.HR.entity.JobDescription;
 import com.cv_jd_matching.HR.mapper.CvMapper;
@@ -17,7 +18,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -34,13 +35,25 @@ public class MatchingClientImpl implements MatchingClient{
         }
         CvDTO cvDTO = CvMapper.mapEntityToDTO(cv.get());
         JobDescriptionDTO jobDescriptionDTO = JobDescriptionMapper.mapEntityToDTO(jobDescription.get());
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("cvDTO", cvDTO);
-        builder.part("jobDescriptionDTO", jobDescriptionDTO);
+
+        Map<String, Integer> jobSkills = new HashMap<>();
+        jobSkills.put("Python", 30);
+        jobSkills.put("TensorFlow", 20);
+        jobSkills.put("PyTorch", 20);
+        jobSkills.put("Scikit-learn", 10);
+        jobSkills.put("AWS", 10);
+        jobSkills.put("Git", 10);
+
+        List<String> industryKeywords = new ArrayList<>();
+        industryKeywords.add("machine learning");
+        industryKeywords.add("artificial intelligence");
+        industryKeywords.add("AI");
+        industryKeywords.add("data science");
+        MatchRequestDTO requestDTO = new MatchRequestDTO(cvDTO, jobDescriptionDTO, jobSkills, industryKeywords);
+
         return webClient.post()
-                .uri("/match")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(BodyInserters.fromMultipartData(builder.build()))
+                .uri("/match/aux")
+                .bodyValue(requestDTO)
                 .retrieve()
                 .bodyToMono(Integer.class);
     }

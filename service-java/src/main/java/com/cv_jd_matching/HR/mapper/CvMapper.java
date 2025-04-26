@@ -30,6 +30,7 @@ public class CvMapper {
                 .name(cv.getName())
                 .id(cv.getId())
                 .skills(splitString(cv.getTechnicalSkills())) // this will be changed
+                .accessLink(cv.getPathName())
                 .build();
     }
 

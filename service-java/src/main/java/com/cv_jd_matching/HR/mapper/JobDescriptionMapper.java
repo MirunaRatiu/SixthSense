@@ -21,6 +21,7 @@ public class JobDescriptionMapper {
         return JobDescriptionViewDTO.builder()
                 .jobTitle(jobDescription.getJobTitle())
                 .id(jobDescription.getId())
+                .accessLink(jobDescription.getPathName())
                 .build();
     }
 }
