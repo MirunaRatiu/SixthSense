@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import com.cv_jd_matching.HR.util.StringListConverter;
 import lombok.Data;
 
-
 import java.sql.Date;
 
 @Entity
