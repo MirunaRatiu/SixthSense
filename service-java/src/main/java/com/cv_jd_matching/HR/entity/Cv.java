@@ -7,7 +7,6 @@ import com.cv_jd_matching.HR.util.StringListConverter;
 import lombok.Data;
 
 import java.sql.Date;
-import java.util.List;
 
 @Entity
 @Table(name ="cv")
@@ -31,43 +30,35 @@ public class Cv {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "technical_skills", columnDefinition = "JSON")
-    @Convert(converter = StringListConverter.class)
-    private List<String> technicalSkills;
+    @Column(name = "technical_skills", columnDefinition = "TEXT")
+    private String technicalSkills;
 
-    @Column(name = "foreign_languages", columnDefinition = "JSON")
-    @Convert(converter = StringListConverter.class)
-    private List<String> foreignLanguages;
+    @Column(name = "foreign_languages", columnDefinition = "TEXT")
+    private String foreignLanguages;
 
-    @Column(name = "education", columnDefinition = "JSON")
-    @Convert(converter = StringListConverter.class)
-    private List<String> education;
+    @Column(name = "education", columnDefinition = "TEXT")
+    private String education;
 
-    @Column(name = "certifications", columnDefinition = "JSON")
-    @Convert(converter = StringListConverter.class)
-    private List<String> certifications;
+    @Column(name = "certifications", columnDefinition = "TEXT")
+    private String certifications;
 
-    @Column(name = "project_experience", columnDefinition = "JSON")
-    @Convert(converter = StringListConverter.class)
-    private List<String> projectExperience;
+    @Column(name = "project_experience", columnDefinition = "TEXT")
+    private String projectExperience;
 
-    @Column(name = "work_experience", columnDefinition = "JSON")
-    @Convert(converter = StringListConverter.class)
-    private List<String> workExperience;
+    @Column(name = "work_experience", columnDefinition = "TEXT")
+    private String workExperience;
+
+    @Column(name = "others", columnDefinition = "TEXT")
+    private String others;
 
     @Column(name = "created_at")
     private Date createdAt;
 
-    @Column(name = "others")
-    @Convert(converter = StringListConverter.class)
-    private List<String> others;
-
-
-
     public Cv() {
-        createdAt = new Date(System.currentTimeMillis());
+        this.createdAt = new Date(System.currentTimeMillis());
     }
 
+    // Setters
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
@@ -76,39 +67,49 @@ public class Cv {
         this.pathName = pathName;
     }
 
-    public void setTechnicalSkills(List<String> technicalSkills) {
-        this.technicalSkills = technicalSkills;
-    }
-
-    public void setForeignLanguages(List<String> foreignLanguages) {
-        this.foreignLanguages = foreignLanguages;
-    }
-
-    public void setEducation(List<String> education) {
-        this.education = education;
-    }
-
-    public void setCertifications(List<String> certifications) {
-        this.certifications = certifications;
-    }
-
-    public void setProjectExperience(List<String> projectExperience) {
-        this.projectExperience = projectExperience;
-    }
-
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setOthers(List<String> others) {
-        this.others = others;
+    public void setTechnicalSkills(String technicalSkills) {
+        this.technicalSkills = technicalSkills;
     }
 
-    public void setWorkExperience(List<String> workExperience) {
+    public void setForeignLanguages(String foreignLanguages) {
+        this.foreignLanguages = foreignLanguages;
+    }
+
+    public void setEducation(String education) {
+        this.education = education;
+    }
+
+    public void setCertifications(String certifications) {
+        this.certifications = certifications;
+    }
+
+    public void setProjectExperience(String projectExperience) {
+        this.projectExperience = projectExperience;
+    }
+
+    public void setWorkExperience(String workExperience) {
         this.workExperience = workExperience;
     }
 
+    public void setOthers(String others) {
+        this.others = others;
+    }
+
+
+    // Getters (exemplu)
     public String getName() {
         return name;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public Integer getId() {
+        return id;
     }
 }

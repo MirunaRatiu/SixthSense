@@ -6,13 +6,13 @@ CREATE TABLE cv (
                     file_name VARCHAR(255),
                     path_name VARCHAR(255),
                     name VARCHAR(255),
-                    technical_skills JSON,
-                    foreign_languages JSON,
-                    education JSON,
-                    certifications JSON,
-                    project_experience JSON,
-                    work_experience JSON,
-                    others JSON,
+                    technical_skills TEXT,
+                    foreign_languages TEXT,
+                    education TEXT,
+                    certifications TEXT,
+                    project_experience TEXT,
+                    work_experience TEXT,
+                    others TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

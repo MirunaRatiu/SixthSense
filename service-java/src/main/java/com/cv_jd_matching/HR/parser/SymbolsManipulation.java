@@ -5,7 +5,9 @@ public class SymbolsManipulation {
 
 
     public static String encodeDiacritics(String text) {
-        if (text == null) return null;
+        if (text == null) {
+            return null;
+        }
 
         text = text.replace("ă", "\\u0103");
         text = text.replace("î", "\\u00EE");
@@ -20,7 +22,18 @@ public class SymbolsManipulation {
         text = text.replace("Â", "\\u00C2");
         text = text.replace("'", "\\u0027");
         text = text.replace("’", "\\u2019");
-        text = text.replace("\"", "\\u0022");
+        //text = text.replace( "\"","\\u0022");
+
+        //text = text.replace("/", "\\u002F");
+        //text = text.replace("I", "\\u0049");
+        //text = text.replace("|", "\\u007C");
+
+        text = text.replace( "‘","\\u2018");
+        text = text.replace("“","\\u201C");
+        text = text.replace( "”","\\u201D");
+        //text = text.replace( "‚","\\u201A");
+        text = text.replace("‛","\\u201B");
+
 
 //        text = text.replace("\\", "\\u005C");
 //        text = text.replace("|", "\\u007C");
@@ -30,7 +43,9 @@ public class SymbolsManipulation {
     }
 
     public static String decodeDiacritics(String text) {
-        if (text == null) return null;
+        if (text == null) {
+            return null;
+        }
 
         text = text.replace("\\u0103", "ă");
         text = text.replace("\\u00EE", "î");
@@ -46,7 +61,19 @@ public class SymbolsManipulation {
         text = text.replace("\\u00C2", "Â");
         text = text.replace("\\u0027", "'");
         text = text.replace("\\u2019", "’");
-        text = text.replace("\\u0022", "\"");
+        //text = text.replace("\\u0022", "\"");
+
+
+        //text = text.replace( "\\u002F","/");
+        //text = text.replace("\\u0049","I");
+        //text = text.replace( "\\u007C","|");
+
+        text = text.replace("\\u2018", "‘");
+        text = text.replace("\\u201C", "“");
+        text = text.replace("\\u201D", "”");
+        //text = text.replace("\\u201A", "‚");
+        text = text.replace("\\u201B", "‛");
+
 //        text = text.replace("\\u005C", "\\");
 //        text = text.replace("\\u007C", "|");
 //        text = text.replace("\\u002D", "-");
