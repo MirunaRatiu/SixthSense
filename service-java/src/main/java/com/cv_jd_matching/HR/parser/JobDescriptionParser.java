@@ -229,17 +229,25 @@ public class JobDescriptionParser {
 
     private static String extractField(String content, String title) {
         int start = content.indexOf(title);
-        if (start == -1) return "";
+        if (start == -1) {
+            return "";
+        }
         int end = content.indexOf("\n\n", start);
-        if (end == -1) end = content.length();
+        if (end == -1) {
+            end = content.length();
+        }
         return content.substring(start + title.length(), end).trim();
     }
 
     private static List<String> extractList(String content, String title) {
         int start = content.indexOf(title);
-        if (start == -1) return new ArrayList<>();
+        if (start == -1) {
+            return new ArrayList<>();
+        }
         int end = content.indexOf("\n\n", start);
-        if (end == -1) end = content.length();
+        if (end == -1) {
+            end = content.length();
+        }
         String section = content.substring(start + title.length(), end).trim();
         return Arrays.stream(section.split("\n|-"))
                 .map(String::trim)
@@ -248,10 +256,18 @@ public class JobDescriptionParser {
     }
 
     private static List<Object> convertToList(Object obj) {
-        if (obj == null) return new ArrayList<>();
-        if (obj instanceof List) return (List<Object>) obj;
-        if (obj instanceof LinkedTreeMap) return List.of(obj);
-        if (obj instanceof String) return List.of(obj);
+        if (obj == null) {
+            return new ArrayList<>();
+        }
+        if (obj instanceof List) {
+            return (List<Object>) obj;
+        }
+        if (obj instanceof LinkedTreeMap) {
+            return List.of(obj);
+        }
+        if (obj instanceof String) {
+            return List.of(obj);
+        }
         return new ArrayList<>();
     }
 
