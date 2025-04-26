@@ -104,77 +104,82 @@ public class CvParser {
                             </step>
                             <step>
                                           <name>Extracting Technical Skills (Skills Only Output)</name>
-                                          <details>
-                                            Identify the relevant sections for technical skills using titles such as "Technical Skills", "Skills", "Technical", "Programming Languages", "Professional Skills", "Key Skills", "Tech Stack", "Technology Proficiency", "Technical Expertise", "Core Technologies", "Development Tools & Technologies", "Technical Competencies", "IT Skills", "What I Work With", "Tools & Technologies", "Things I Know", "Digital Toolkit", "My Toolbox", "Tech Arsenal", "Tehnologii", "Competențe Tehnice". Analyze the content of these sections to extract each individual technical skill, taking into account the following rules:
+                                                      <details>
+                                                        Identify the relevant sections for technical skills using titles such as "Technical Skills", "Skills", "Technical", "Programming Languages", "Professional Skills", "Key Skills", "Tech Stack", "Technology Proficiency", "Technical Expertise", "Core Technologies", "Development Tools & Technologies", "Technical Competencies", "IT Skills", "What I Work With", "Tools & Technologies", "Things I Know", "Digital Toolkit", "My Toolbox", "Tech Arsenal", "Tehnologii", "Competențe Tehnice". Analyze the content of these sections to extract each individual technical skill, taking into account the following rules:
                     
-                                            - If multiple skills are written together using symbols like "|", "/", or " I " (e.g., "HTML|CSS", "HTML/CSS", "HTMLICSS", "C/C++"), **keep them exactly as they appear as a single skill entry.** Do not split them.
-                                            - Extract the full, exact name of each skill as it appears, including modifiers like 'Big', 'Advanced', 'Basic' etc. (e.g., extract "Big Data Analytics", not just "Data Analytics").
+                                                        - Extract each individual technical skill.
+                                                        - Extract the full, exact name of each skill as it appears, including modifiers like 'Big', 'Advanced', 'Basic' etc., unless modified by normalization rules below.
                     
-                                            **Mandatory Comma Separation Rule:**
-                                            - **If a line, list item, or text segment contains multiple distinct skills separated by a comma (,), you MUST treat each comma-delimited segment as a separate, individual skill.**
-                                            - Remove any leading or trailing whitespace from each skill after splitting.
-                                            - **Examples:**
-                                                - Input line: `- JavaScript, ReactJS, HTML, CSS` → Output should contain 4 separate skill entries: `{"skill": "JavaScript"}`, `{"skill": "ReactJS"}`, `{"skill": "HTML"}`, `{"skill": "CSS"}`.
-                                                - Input line: `- Python, Django, REST APIs` → Output should contain 3 separate skill entries: `{"skill": "Python"}`, `{"skill": "Django"}`, `{"skill": "REST APIs"}`.
-                                                - Input line: `- AWS, Docker, Kubernetes` → Output should contain 3 separate skill entries: `{"skill": "AWS"}`, `{"skill": "Docker"}`, `{"skill": "Kubernetes"}`.
-                                                - Input line: `- SQL, PostgreSQL, OracleSQL` → Output should contain 3 separate skill entries: `{"skill": "SQL"}`, `{"skill": "PostgreSQL"}`, `{"skill": "OracleSQL"}`.
-                                                - Input line: `- Figma, InVision` → Output should contain 2 separate skill entries: `{"skill": "Figma"}`, `{"skill": "InVision"}`.
+                                                        **Mandatory Comma Separation Rule:**
+                                                        - **General Case:** If a line, list item, or text segment contains multiple distinct skills separated by a comma (,), and **NO single level indicator applies to the group at the end** (see Level Extraction rules below), you MUST treat each comma-delimited segment as a separate, individual skill.
+                                                        - Remove any leading or trailing whitespace from each skill after splitting.
+                                                        - **Note:** This rule is applied *after* checking for shared levels (see below).
                     
-                                              **General Normalization Rule for "programming":**
-                                              - After extracting a skill, **replace all occurrences of the word " programming" (case-insensitive, surrounded by word boundaries or at the beginning/end of the string) with an empty string.**
-                                              - After the replacement, **trim any leading or trailing whitespace** that might have been introduced.
-                                              - For other skills that do not contain " programming", save them as extracted.
+                                                        **General Normalization Rule for "programming":**
+                                                        - After extracting a skill, **replace all occurrences of the word " programming"** (case-insensitive, surrounded by word boundaries or at the beginning/end of the string) **with an empty string.**
+                                                        - After the replacement, **trim any leading or trailing whitespace** that might have been introduced.
+                                                        - For other skills that do not contain " programming", save them as extracted.
                     
-                                              **General Normalization Rule for "language":**
-                                              - After extracting a skill, **replace all occurrences of the word " language" (case-insensitive, surrounded by word boundaries or at the beginning/end of the string) with an empty string.**
-                                              - After the replacement, **trim any leading or trailing whitespace** that might have been introduced.
-                                              - For other skills that do not contain " language", save them as extracted.
+                                                        **General Normalization Rule for "language":**
+                                                        - After extracting a skill, **replace all occurrences of the word " language"** (case-insensitive, surrounded by word boundaries or at the beginning/end of the string) **with an empty string.**
+                                                        - After the replacement, **trim any leading or trailing whitespace** that might have been introduced.
+                                                        - For other skills that do not contain " language", save them as extracted.
                     
-                                            **Internal Logic for Associating Expertise Level (Not for Output):**
-                                            *During parsing*, internally identify any expertise level indicators associated with skills using the following priority (this helps understand the context but **will NOT be included in the final JSON output** for this section):
+                                                        **Extracting and Associating Expertise Levels:**
+                                                        - When extracting skills, **also identify any explicitly mentioned expertise levels or scores** associated with those skills. Levels often appear at the end of a line or segment, sometimes after a colon (e.g., `: 4`, `: Advanced`).
+                                                        - Consider these as level indicators: "Expert", "Advanced", "Intermediate", "Beginner", "Proficient", "Familiar", numerical scores (e.g., "1/5", "7/10", "Score: 9", simple numbers like "4"), and Romanian words like "Avansat", "Incepator".
                     
-                                            1.  **Immediate Specific Level:** If a level (score or proficiency) is mentioned **directly after** a single skill or after a skill in a comma-separated list (e.g., "Java - Expert", "Python (Advanced)", "C++, Score: 8/10"), internally associate that level with that specific skill.
+                                                        - **Priority Rule for Shared Levels (CRITICAL FOR YOUR REQUIREMENT):**
+                                                            - **IF a line or text segment clearly contains multiple skills listed together (often separated by commas or similar delimiters) FOLLOWED BY a single, shared level indicator** (e.g., `Python, TensorFlow: 4` or `JavaScript, ReactJS: 3` or `AWS SageMaker, Docker - Advanced`), THEN:
+                                                                1. **Identify and extract the single shared `level`** (e.g., "4", "3", "Advanced").
+                                                                2. **Isolate the text containing the list of skills** preceding the level indicator (e.g., `Python, TensorFlow` or `JavaScript, ReactJS` or `AWS SageMaker, Docker`).
+                                                                3. **Split this skill text into individual skills** using the comma (or other relevant delimiter like '/') as a separator. Trim whitespace from each resulting skill. (e.g., ["Python", "TensorFlow"] or ["JavaScript", "ReactJS"]).
+                                                                4. **Assign the extracted shared `level` to EACH of these individual skills.**
+                                                                5. Process each resulting skill-level pair (e.g., Python with level 4, TensorFlow with level 4).
+                                                            - **This rule takes precedence.** Do NOT assign the level only to the last skill in such cases.
                     
-                                            2.  **Unique Level for Multiple Skills (Contextual Distribution):** If a level is mentioned **only once after a list of comma-separated skills** (e.g., "JavaScript, HTML, CSS - Intermediate", "Python, Django (Avansat)"), **internally associate that level with *each* skill in that specific comma-separated list.** This requires careful contextual analysis to ensure the level applies collectively.
+                                                        - **Rule for Individual Levels:**
+                                                            - If levels are provided individually for each skill within a segment (e.g., `Java: Expert, Python: Intermediate`), extract each skill and its specifically associated level.
                     
-                                            3.  **Specific Level within the List:** If the level is specified individually for each skill in a list (e.g., "Java (Expert), Spring Boot (Advanced), SQL (Medium)"), internally associate the corresponding level with each specific skill.
+                                                        - **Rule for No Level:**
+                                                            - If, after applying the above rules, a skill is identified without any associated level indicator (either shared or individual), extract the skill without a level. This applies to skills listed alone without levels, or skills extracted using the basic Comma Separation Rule when no group level was present.
                     
-                                            4.  **Ambiguity or Lack of Clarity:** If the level association is ambiguous, uncertain, or the level is mentioned before the list without a clear connection, do not associate any level internally for those skills.
+                                                        - **Final Processing:** Apply the "programming" and "language" normalization rules to the skill name *after* association with its level (if any).
                     
-                                            **Final Output Structure (Skills Only):**
-                                            - The final JSON output for this section MUST be a list of objects, where each object contains **ONLY the `skill` key** with the extracted and normalized skill name as its string value.
-                                            - Any identified level/score information is used for internal understanding during parsing but **MUST be omitted** from the final JSON output for this section.
+                                                        **Final Output Structure (Skills with Levels):**
+                                                        - The final JSON output for this section MUST be a list of objects, where each object contains:
+                                                            - The `skill` key with the extracted and normalized skill name as its string value.
+                                                            - An optional `level` key with the extracted expertise level as its string value (if available). **If no level is found for a skill, the `level` key MUST be omitted for that skill object.**
                     
-                                            **Desired JSON Output Example:**
-                                            ```json
-                                            "technical_skills": [
-                                              {"skill": "Java(OOP)"},
-                                              {"skill": "Spring Boot"},
-                                              {"skill": "Python"},
-                                              {"skill": "Django"},
-                                              {"skill": "SQL"},
-                                              {"skill": "PostgreSQL"},
-                                              {"skill": "AWS"},
-                                              {"skill": "Docker"},
-                                              {"skill": "Node.js"},
-                                              {"skill": "REST APIs"},
-                                              {"skill": "HTML"},
-                                              {"skill": "CSS"},
-                                              {"skill": "C/C++"},
-                                              {"skill": "Cybersecurity"},
-                                              {"skill": "Big Data Analytics"},
-                                              {"skill": "JavaScript"},
-                                              {"skill": "ReactJS"},
-                                              {"skill": "OracleSQL"},
-                                              {"skill": "Figma"},
-                                              {"skill": "InVision"},
-                                              {"skill": "Git"},
-                                              {"skill": "MySQL"}
-                                              // ... any other skills extracted following the rules
-                                            ]
-                                            ```
-                                            Return this structure under the `"technical_skills"` key ONLY if technical skills are found. **ENSURE THAT ANY ROMANIAN TEXT WITHIN THIS SECTION PRESERVES DIACRITICS.**
-                                          </details>
+                                                        **Desired JSON Output Example (Reflecting Corrected Logic):**
+                                                        ```json
+                                                        "technical_skills": [
+                                                          {"skill": "Python", "level": "4"},       // Corrected based on "Python, TensorFlow: 4"
+                                                          {"skill": "TensorFlow", "level": "4"},   // Corrected based on "Python, TensorFlow: 4"
+                                                          {"skill": "JavaScript", "level": "3"},   // Corrected based on "JavaScript, ReactJS: 3"
+                                                          {"skill": "ReactJS", "level": "3"},      // Corrected based on "JavaScript, ReactJS: 3"
+                                                          {"skill": "AWS SageMaker", "level": "2"}, // Corrected based on "AWS SageMaker, Docker: 2"
+                                                          {"skill": "Docker", "level": "2"},       // Corrected based on "AWS SageMaker, Docker: 2"
+                                                          {"skill": "SQL", "level": "3"},          // Corrected based on "SQL, PostgreSQL: 3"
+                                                          {"skill": "PostgreSQL", "level": "3"},   // Corrected based on "SQL, PostgreSQL: 3"
+                                                          {"skill": "Figma", "level": "2"},        // Corrected based on "Figma, Adobe XD: 2"
+                                                          {"skill": "Adobe XD", "level": "2"},     // Corrected based on "Figma, Adobe XD: 2"
+                                                          {"skill": "Java", "level": "Expert"},    // Example: Individual level
+                                                          {"skill": "Spring Boot", "level": "Advanced"}, // Example: Individual level
+                                                          {"skill": "C/C++"},                      // Example: No level
+                                                          {"skill": "C"},                      // Example: No level
+                                                          {"skill": "C++"},                      // Example: No level
+                                                          {"skill": "CSS"},                      // Example: No level
+                                                          {"skill": "HTML"},                      // Example: No level
+                                                          {"skill": "Cybersecurity"},               // Example: No level
+                                                          {"skill": "Big Data Analytics"},         // Example: No level
+                                                          {"skill": "Git"},                         // Example: No level
+                                                          {"skill": "MySQL"}                        // Example: No level
+                                                          // ... any other skills extracted following the rules
+                                                        ]
+                                                                                                ```
+                                                                                                Return this structure under the `"technical_skills"` key ONLY if technical skills are found. **ENSURE THAT ANY ROMANIAN TEXT WITHIN THIS SECTION PRESERVES DIACRITICS.**
+                                            </details>
                                         </step>
                            <step>
                               <name>Extracting Education (Degrees Only) and Certifications with Dual Parsing</name>
@@ -231,9 +236,14 @@ public class CvParser {
                                 # === START CERTIFICATIONS FIELDS MODIFICATION ===
                                 For each identified certification element:
                                  - Extract the certification `name`.
-                                 - Extract the issuing `institution` (e.g., Coursera, Udemy, Google, Microsoft, specific Academy name).
+                                 - Extract the issuing `institution` (e.g., Coursera, Udemy, Google, Microsoft, specific Academy name). Ensure this is the *issuing body* and not a technology or topic.
                                  - **(Optional) Extract any descriptive text** associated with the certification. If it's a paragraph, process it into coherent sentences using the global sentence processing rule. If it's bullet points, extract them as a list of strings. Place this into the `"description"` field. Omit if no description exists.
-                                 - **Mandatory Field:** Look for and extract any mentioned technologies, tools, or methodologies associated with the certification. Include them in a `"technologies"` list. Apply the general normalization rule for "programming"/"language" to each extracted technology. **If no technologies are mentioned for this entry, include the key `"technologies"` with an empty list `[]` as its value.**
+                                  - **Mandatory Field (`technologies`):**
+                                                 - **Scope:** Carefully scan ONLY the extracted `name` and the `description` (if present) of THIS specific certification entry.
+                                                 - **Action:** Identify and extract keywords representing specific technologies, software, tools, programming languages, platforms, frameworks, or methodologies mentioned *within* this scope (e.g., Python, Java, SQL, AWS, Azure, Docker, TensorFlow, Git, Agile, React, Machine Learning).
+                                                 - **Normalization:** Apply the general normalization rule for "programming"/"language" to each extracted term (e.g., "Python programming" -> "Python language").
+                                                 - **Output:** Collect these identified terms into a list under the `"technologies"` key.
+                                                 - **Empty List Condition:** If, after thoroughly searching the `name` and `description` for this specific entry, NO relevant technology keywords are found, you MUST include the key `"technologies"` with an empty list `[]` as its value. **Do not include technologies mentioned elsewhere in the document unless they are explicitly part of THIS certification's name or description.**
                                  - Apply the **Strict Date Normalization** rule (defined in `<global_instructions>`) to identify and format the completion date into the required `YYYY-MM` / `YYYY` format. Place this value in the `"date"` field. Omit if no date is found.
                                 # === END CERTIFICATIONS FIELDS MODIFICATION ===
 
