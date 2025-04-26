@@ -13,83 +13,152 @@ import java.util.stream.Collectors;
 public class JobDescriptionParser {
     private static final String PROMPT = """
 <task>
-  <name>Strict CV Parser for SQL-Compatible Text (Zero Hallucination)</name>
+  <name>Atomic Job Description Decomposition for Semantic CV Matching</name>
   <description>
-    Extract ONLY explicitly mentioned information from the following CV content. DO NOT assume or infer anything that is not clearly written. The extracted fields will be used in a SQL table with TEXT columns. Leave fields blank if not present. DO NOT fill in missing values. DO NOT invent job titles, skill levels, technologies, dates, or names.
+    Analyze the job description enclosed in <content> and decompose it into a fully structured JSON with **maximal atomicity and semantic fidelity**. Focus on **Key Responsibilities**, **Required Qualifications**, and **Preferred Skills**.
 
-    Your task is to match the following output schema with exact CV content:
+    === Atomic Decomposition Logic ===
 
-    - name: full name of the candidate
-    - technical_skills: list of skills (e.g., Java - Intermediate). Include level ONLY if explicitly stated.
-    - foreign_languages: list as "Language - Level" or just "Language"
-    - education: each degree including institution, field of study, period (start-end), duration if mentioned
-    - certifications: each certification with name, issuer, date, and technologies/tools mentioned (ONLY if clearly stated)
-    - project_experience: project title, description, technologies used (if mentioned)
-    - work_experience: job, internship, competition, or volunteering experience, with role/title, organization, period, duration, description (bullet-style), and technologies if listed
-    - others: everything else grouped logically under original titles (e.g., "Contact Information", "Interests", "Traits")
+    🔍 Apply these rules to extract logically complete, atomic statements:
 
-    === CRITICAL RULES ===
+    1. **Nested AND/OR logic**:
+       - Support **group nesting**: 
+         - `group_type: "AND"` can contain multiple `OR` groups
+         - `group_type: "OR"` can contain multiple `AND` groups
+       - Nesting MUST reflect the semantic logic of the original sentence.
 
-    ⚠️ DO NOT INVENT or add ANY information.
-    ⚠️ DO NOT infer job titles, skill levels, or project names.
-    ⚠️ If a field is missing in the CV, leave it empty.
-    ⚠️ DO NOT summarize, guess, or rewrite. Extract as-is.
-    ⚠️ DO NOT use examples or completions from previous templates.
+    2. **Enumerations with "and"/"or" inside complex phrases**:
+       → e.g., "using MySQL, MongoDB, or PostgreSQL":
+       - Split into **all possible logical combinations** by distributing verbs/actions.
+       - Preserve semantic units, e.g.:
+         - Design using MySQL
+         - Design using MongoDB
+         - Implement using PostgreSQL
+         etc.
 
-    === Section Detection (Synonyms Allowed) ===
+    3. **"and" splits**:
+       - Split **EVERY** instance where "and" joins distinct actions or items.
+       ✅ Remove "and"
+       ✅ Resulting items are grouped with `group_type: "AND"`
 
-    - Skills: "Technical Skills", "Skills", "Technologies", "Programming Languages", etc.
-    - Education: "Education", "Studies", "Training", etc.
-    - Certifications: "Certificates", "Courses", "Trainings", etc.
-    - Work Experience: "Experience", "Work History", "Volunteering", "Hackathons", etc.
-    - Projects: "Projects", "Portfolio", "Achievements"
-    - Languages: "Languages", "Foreign Languages", etc.
-    - Others: "Contact Info", "Interests", "Traits", etc.
+    4. **"or" splits**:
+       - Split **EVERY** instance where "or" presents alternatives.
+       ✅ Remove "or"
+       ✅ Resulting items are grouped with `group_type: "OR"`
 
-    === Extraction Behavior ===
+    5. **Comma-based enumerations**:
+       - Treat all comma-separated lists (e.g., "X, Y, and Z") as **AND**, unless context clearly implies OR.
+       ✅ Remove commas and conjunctions.
+       ✅ group_type: "AND"
+       ✅ Same treatment as "and" rules.
 
-    - technical_skills: split skills by commas, slashes or line breaks. Include levels only if stated.
-    - education: include institution, degree/field, start/end years, and duration if written.
-    - certifications: include name, issuer, date, and technologies ONLY if written in the CV.
-    - work_experience: extract only what exists. Do not add duration if end date is missing. Keep tech/tools mentioned.
-    - project_experience: title, brief description, technologies/tools if mentioned
-    - foreign_languages: extract only those written
-    - others: keep original section titles like "Contact", "Interests", etc. Normalize emails/phones/social links.
+    6. **Combination Expansion**:
+       - When both AND and OR exist in the same statement, **expand all possible combinations**, reflecting logical structure.
+       - Ex: "Design and implement using X, Y, or Z" → generate:
+         - Design using X
+         - Design using Y
+         - Implement using Z
+         etc.
+       - Then group logically using nested AND/OR.
+
+    === Domain Deduction ===
+    Analyze the `company_overview` to deduce the company's main domain or industry (e.g., "FinTech", "E-commerce", "Healthcare SaaS", "Enterprise Software Solutions"). Use keywords and context to infer the primary focus of the company's activities. If the domain is not specific to a vertical industry, use a general term like "Enterprise Software Solutions" or "Technology Services".Store the deduced domain in the "message" field as a string, e.g., "Enterprise Software Solutions industry".
+
+    === Output Structure Requirements ===
+
+    * Each atomic `task`, `requirement`, or `skill` must be:
+      - A standalone, grammatically correct phrase
+      - Free of "and"/"or" if they caused a split
+      - Fully self-contained (contextually reconstructed if needed)
+    * Maintain the `original_statement` as provided.
+    * No atomic item should end with a dangling period or conjunction.
+    * Include the deduced domain in the `domain` field.
 
     === Output Format ===
 
-    Return the result in PLAIN TEXT (no JSON). Format example:
+    Output **only** the JSON object matching this structure:
 
-    name: Jane Doe
-    technical_skills: Python, Java - Intermediate, SQL
-    foreign_languages: English - Fluent, German
-    education: 
-      Bachelor - Computer Science - University of Bucharest - 2019-2022 - Duration: 3 years
-    certifications: 
-      Oracle Certified Associate - Oracle - 2022 - Technologies: Java, SQL
-    work_experience: 
-      Backend Developer at Softvision (2023-01 to Present)
-      Description: Built REST APIs, maintained microservices
-      Technologies: Java, Spring Boot, PostgreSQL
-    project_experience:
-      Smart Notes App - Mobile app for note-taking - Technologies: Kotlin, Firebase
-    others:
-      Contact Information:
-        Email: jane.doe@email.com, Phone: +40712345678
-      Interests:
-        Hiking, UI Design, Puzzles
+    {
+      "job_title": "string",
+      "company_overview": "string",
+      "message": "string",
+      "key_responsibilities": [
+        {
+          "original_statement": "string",
+          "group": [
+            {
+              "group": [
+                {"task": "string"},
+                ...
+              ],
+              "group_type": "AND" | "OR"
+            },
+            ...
+          ],
+          "group_type": "AND" | "OR"
+        }
+        |
+        {
+          "original_statement": "string",
+          "task": "string"
+        }
+      ],
+      "required_qualifications": [
+        {
+          "original_statement": "string",
+          "group": [
+            {
+              "group": [
+                {"requirement": "string"},
+                ...
+              ],
+              "group_type": "AND" | "OR"
+            },
+            ...
+          ],
+          "group_type": "AND" | "OR"
+        }
+        |
+        {
+          "original_statement": "string",
+          "requirement": "string"
+        }
+      ],
+      "preferred_skills": [
+        {
+          "original_statement": "string",
+          "group": [
+            {
+              "group": [
+                {"skill": "string"},
+                ...
+              ],
+              "group_type": "AND" | "OR"
+            },
+            ...
+          ],
+          "group_type": "AND" | "OR"
+        }
+        |
+        {
+          "original_statement": "string",
+          "skill": "string"
+        }
+      ],
+      "benefits": [
+        {
+          "original_statement": "string",
+          "benefit": "string"
+        }
+      ]
+    }
 
-    ⚠ Again: DO NOT INVENT ANYTHING.
-    ⚠ Replace all `\\n` with space inside each value.
-    ⚠ Return ALL FIELDS even if empty.
-    ⚠ Preserve Romanian diacritics exactly as written in the CV.
   </description>
   <content>
-  {content}
+  {content} 
   </content>
 </task>
 """;
-
 
     private static final String GEMINI_MODEL = "gemini-2.0-flash-001";
     private static final String GEMINI_API_KEY = System.getenv("GOOGLE_API_KEY");
