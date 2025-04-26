@@ -291,10 +291,10 @@ def transform_dto_to_jd(dto: Dict[str, Any]) -> Dict[str, Any]:
     benefits_raw = dto.get("benefits", "") # Handle benefits if present
 
     job_title = dto.get("jobTitle", "Job")
-    message = f"{job_title} related industry context" # Example message
+    message = dto.get("message")
 
     return {
-        "job_title": dto.get("jobTitle"),
+        "job_title": job_title,
         "company_overview": dto.get("companyOverview"),
         "message": message,
         "key_responsibilities": process_field(

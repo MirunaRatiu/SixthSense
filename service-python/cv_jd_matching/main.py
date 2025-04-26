@@ -1,19 +1,26 @@
+import os
 from typing import Optional, Dict, List
 import asyncio
 
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import chromadb
 from sentence_transformers import SentenceTransformer
-import numpy as np
 
-from cv_parse import transform_dto_to_cv
-from jd_parse import transform_dto_to_jd
-from match import get_match_score
+import google.generativeai as genai
+
+from parsers.cv_parse import transform_dto_to_cv
+from parsers.jd_parse import transform_dto_to_jd
+from matching_logic.match import get_match_score
 
 app = FastAPI()
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+model_sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2')
+
+api_key = os.getenv("GOOGLE_API_KEY")
+if not api_key:
+    raise ValueError("GOOGLE_API_KEY environment variable not set")
+genai.configure(api_key=api_key)
+model_genai = genai.GenerativeModel('gemini-1.5-pro')
 
 embedding_counter = 0
 lock = asyncio.Lock()
@@ -36,6 +43,7 @@ class JobDescriptionDTO(BaseModel):
     keyResponsibilities: Optional[str]
     requiredQualifications: Optional[str]
     preferredSkills: Optional[str]
+    message: Optional[str]
 
 class MatchRequest(BaseModel):
     cv: CvDTO
@@ -59,7 +67,7 @@ async def match_cv_to_jd(request: MatchRequest):
         transformed_jd = transform_dto_to_jd(request.jd.model_dump())
 
         score, explanation = get_match_score(
-            model,
+            model_sentence_transformer,
             transformed_cv,
             transformed_jd,
             request.job_skills,
@@ -72,3 +80,7 @@ async def match_cv_to_jd(request: MatchRequest):
 
 
 
+
+if __name__ == "__main__":
+     import uvicorn
+     uvicorn.run(app, host="127.0.0.1", port=8081)

@@ -1,351 +1,39 @@
-from match import get_match_score
+import os
 
-cv = {    "technical_skills": [        {"skill": "Java"}, {"skill": "Python"}, {"skill": "SpringBoot"}, {"skill": "HTML"},        {"skill": "C++"}, {"skill": "CSS"}, {"skill": "MySQL"}, {"skill": "Git"}, {"skill": "Angular"}    ],    "foreign_languages": [        {"language": "English", "proficiency": "fluent"},        {"language": "German", "proficiency": "classroom study"},        {"language": "Romanian", "proficiency": "native"}    ],    "education": [        {            "institution": "Technical University of Cluj-Napoca",            "degree": "Bachelor",            "field_of_study": "Computer Science",            "period": {"start_date": "2022-10", "end_date": "Present"},            "technologies": []        }    ],    "certifications": [        {"name": "AWS Certified Developer - Associate", "institution": None, "technologies": []},        {"name": "Microsoft Certified: Azure Developer Associate", "institution": None, "technologies": []},        {"name": "Google Professional Cloud Developer", "institution": None, "technologies": []}    ],    "project_experience": [        {            "title": "SpringLibrary",            "description": "A web application that enables the management of books from a catalogue...",            "technologies": ["SpringBoot", "Spring Security", "Lombok", "Gradle", "Thymeleaf", "HTML"]        }    ],    "work_experience": [    {        "type": "job",        "title": "Intern Java Software Engineer",        "company": "Accesa",        "period": { "start_date": "2023-09" },        "description": [            "During my one month at Accesa, I studied alongside a Senior Java Developer..."        ],        "technologies": ["Java", "SpringBoot"]    },    {        "type": "job",        "title": "Apprentice",        "company": "Accesa",        "period": { "start_date": "2021-07" },        "description": [            "This was a two week apprenticeship where I shadowed two Senior Java Developers and learned how the Agile methodology works."        ],        "technologies": []    }],    "others": {         "About Me": [             "The things that drive me are curiosity, ambition and a strong desire to become better than yesterday's version of myself.",             "I believe in kindness and authenticity, especially while working in team settings.",             "I have a strong sense of leadership, given that I have volunteered for 4 years as a team leader in a youth organization.",             "That is how I discovered that I thrive in environments where creativity, genuineness and hard work are valued.",             "That is what I'm searching for: a team with which I can create and work on amazing projects that make Monday mornings exciting."         ],         "Contact Information": [             {"Address": "Cluj-Napoca, Romania"},             {"Phone number": "+40737016376"},             {"Email": "molnar.sara.viviana@gmail.com"},             {"Website": "Portfolio Website"},             {"LinkedIn": "Linkedin"}         ],         "Hobbies": [             "Escaping into fictional worlds while reading.",             "Helping children discover their interests and strengths through Library volunteering.",             "Researching and soul-searching in order to write impactful articles and stories."         ],         "Interpersonal Skills": [             "Organization: As a Communications Manager for the Edubiz Association, I was responsible for creating the content calendar and coordinating the teams responsible for creating posts.",             "In this role, I developed effective communication skills to establish realistic schedules, manage situations where a team member did not complete their tasks, and prioritize and reallocate assignments to prevent significant gaps.",             "Additionally, I handled conflict resolution both within the team and between team members and senior management.",             "Adaptability and empathy: I developed these skills while volunteering in afterschool centers for young people aged 8 to 14.",             "Each week, I had to prepare engaging activities and select the most suitable ones based on their energy levels at the time.",             "Additionally, before the activities, I held sessions to help them with their homework. Through this experience, I learned to structure my thoughts and express them concisely, ensuring my explanations were clear and easy to understand.",             "Team leading: As a volunteer, I have coordinated multiple teams over time, such as:",             "- volunteer teams, for which I organized weekly meetings to plan activities for afterschool centers, ensured their participation in association-led workshops, and facilitated communication between them and my supervisors.",             "- the blog team, for which I organized and led weekly meetings where I provided feedback on previously written articles and assigned new tasks to team members."         ],         "Publications": [             "Timpul - avem si nu avem: In this article I explored the pitfalls of procrastination and how one can avoid going down the rabbit hole of time wasting.",             "1984 de George Orwell - impresii: This is my review for George Orwell's classic dystopian, 1984.",             "EduBiz lanseaza proiectul 'Aripi de file': This is the story of how I ended up coordinating a book club in my hometown."         ]     }}
+from parsers.cv_parse import transform_dto_to_cv
+from generate_related_words import extract_industry_keywords
+from parsers.jd_parse import transform_dto_to_jd
+from matching_logic.match import get_match_score
+from sentence_transformers import SentenceTransformer
+import google.generativeai as genai
 
-job = {
-  "job_title": "Machine Learning Engineer Tech Lead",
-  "company_overview": "InnovateTech Solutions is a leading technology company dedicated to transforming industries through cutting-edge artificial intelligence and machine learning solutions. Our mission is to empower businesses by providing innovative tools and insights that drive efficiency and growth. We foster a collaborative and inclusive work environment where creativity and innovation thrive.",
-  "message": "AI and Machine Learning Solutions industry",
-  "key_responsibilities": [
-    {
-      "original_statement": "Lead and mentor a team of machine learning engineers to design, develop, and deploy scalable machine learning models.",
-      "group": [
-        {
-          "group": [
-            {
-              "task": "Lead a team of machine learning engineers"
-            },
-            {
-              "task": "Mentor a team of machine learning engineers"
-            }
-          ],
-          "group_type": "AND"
-        },
-        {
-          "group": [
-            {
-              "task": "design scalable machine learning models"
-            },
-            {
-              "task": "develop scalable machine learning models"
-            },
-            {
-              "task": "deploy scalable machine learning models"
-            }
-          ],
-          "group_type": "AND"
+api_key = os.getenv("GOOGLE_API_KEY")
+if not api_key:
+    raise ValueError("GOOGLE_API_KEY environment variable not set")
+genai.configure(api_key=api_key)
+model_genai = genai.GenerativeModel('gemini-1.5-pro')
+
+
+cv = {
+            "id": 101,
+            "technicalSkills": "[{skill=Java}, {skill=Python}, {skill=SpringBoot}, {skill=HTML}, {skill=C++}, {skill=CSS}, {skill=MySQL}, {skill=Git}]",
+            "foreignLanguages": "[{language=English, proficiency=fluent}, {language=German, proficiency=classroom study}, {language=Romanian, proficiency=native}]",
+            "education": "[{institution=Technical University of Cluj-Napoca, degree=Bachelor, field_of_study=Science, period={start_date=2022-10, end_date=Present}, technologies=[]}]",
+            "certifications": "[{name=AWS Certified Developer - Associate, institution=null, technologies=[]}, {name=Microsoft Certified: Azure Developer Associate, institution=null, technologies=[]}, {name=Google Professional Cloud Developer, institution=null, technologies=[]}]",
+            "projectExperience": "[{title=SpringLibrary, description=A web application that enables the management of books from a catalogue. It has different types of users that can perform actions based on their roles. e The login system is based on Java Spring Security. - The project has an architecture that combines Layers and MVC while adhering to SOLID principles., technologies=[SpringBoot, Spring Security, Lombok, Gradle, Thymeleaf, HTML]}, {title=Library, description=A desktop application which was designed to be used in a real-life bookstore, where employees can add or sell books and managers can obtain reports. - It has different types of users that can perform actions based on their roles. Design patterns: Decorator, Builder and FactoryMethod., technologies=[Java, Gradle]}, {title=TheShire, description=An interactive application built using OpenGL which features free first-person exploration, dynamic scene transitions, advanced lighting and graphical effects., technologies=[C++, OpenGL, GLSL, GLM]}]",
+            "workExperience": "[{type=job, title=Intern Java Software Engineer, company=Accesa, period={start_date=2023-09}, description=[During my one month at Accesa, | studied alongside a Senior Java Developer and worked on Java and SpringBoot based applications.], technologies=[Java, SpringBoot]}, {type=job, title=Apprentice, company=Accesa, period={start_date=2021-07}, description=[This was a two week apprenticeship where | shadowed two Senior Java Developers and learned how the Agile methodology works.], technologies=[Java]}]",
+            "others": "[{About Me=[The things that drive me are curiosity, ambition and a strong desire to become better than yesterday's version of myself., | believe in kindness and authenticity, especially while working in team settings., | have a strong sense of leadership, given that | have volunteered for 4 years as a team leader in a youth organization., That is how | discovered that | thrive in environments where creativity, genuineness and hard work are valued., That is what I'm searching for: a team with which | can create and work on amazing projects that make Monday mornings exiting.], Contact Information=[{Address=cluj-Napoca, Romania}, {Phone number=+40) 737 016 376}, {Email=molnar.sara.viviana@gmail.com}, {Website=Portfolio Website}, {LinkedIn=Linkedin}], Hobbies=[Escaping into fictional worlds while reading., Helping children discover their interests and strengths through Library volunteering., Researching and soul-searching in order to write impactful articles and stories.], Interpersonal Skills=[Organization, Adaptability and empathy, Team leading], Publications=[Timpul - avem si nu avem, In this article I explored the pitfalls of procrastination and how one can avoid going down the rabbit hole of time wasting., 1984 de George Orwell - impresii, This is my review for George Orwell's classic dystopian, 1984., EduBiz lanseaza proiectul \"Aripi de file\", This is the story of how | ended up coordinating a book club in my hometown.]}]"
         }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Collaborate with cross-functional teams to define project requirements and deliver high-quality solutions that meet business objectives.",
-      "group": [
-        {
-          "task": "Collaborate with cross-functional teams to define project requirements"
-        },
-        {
-          "task": "Collaborate with cross-functional teams to deliver high-quality solutions that meet business objectives"
+jd =  {
+            "id": 101,
+            "jobTitle": "Senior UI/UX Designer",
+            "message" : "Technology Services industry",
+            "companyOverview": "InnovateTech Solutions is a leading technology company dedicated to creating cutting-edge digital products that enhance user experiences across various platforms. Our team is passionate about innovation, creativity, and delivering exceptional solutions that meet the evolving needs of our clients. We pride ourselves on fostering a collaborative and inclusive work environment where every team member's ideas are valued and contribute to our success.",
+            "keyResponsibilities": "{original_statement=Lead the design and development of user interfaces and experiences for web and mobile applications, ensuring a seamless and intuitive user journey., group=[{group=[{task=Lead the design of user interfaces and experiences for web and mobile applications, ensuring a seamless and intuitive user journey}, {task=Lead the development of user interfaces and experiences for web and mobile applications, ensuring a seamless and intuitive user journey}], group_type=AND}], group_type=AND} {original_statement=Collaborate with cross-functional teams, including product managers, developers, and other designers, to translate business requirements into innovative design solutions., task=Collaborate with cross-functional teams, including product managers, developers, and other designers, to translate business requirements into innovative design solutions} {original_statement=Conduct user research and usability testing to gather insights and validate design concepts, iterating based on feedback to enhance user satisfaction., group=[{group=[{task=Conduct user research to gather insights and validate design concepts, iterating based on feedback to enhance user satisfaction}, {task=Conduct usability testing to gather insights and validate design concepts, iterating based on feedback to enhance user satisfaction}], group_type=AND}], group_type=AND} {original_statement=Create wireframes, prototypes, and high-fidelity designs using industry-standard design tools, ensuring consistency with brand guidelines and design systems., group=[{group=[{task=Create wireframes using industry-standard design tools, ensuring consistency with brand guidelines and design systems}, {task=Create prototypes using industry-standard design tools, ensuring consistency with brand guidelines and design systems}, {task=Create high-fidelity designs using industry-standard design tools, ensuring consistency with brand guidelines and design systems}], group_type=AND}], group_type=AND} {original_statement=Mentor and provide guidance to junior designers, fostering a culture of continuous learning and improvement within the design team., group=[{group=[{task=Mentor junior designers, fostering a culture of continuous learning and improvement within the design team}, {task=Provide guidance to junior designers, fostering a culture of continuous learning and improvement within the design team}], group_type=AND}], group_type=AND} {original_statement=Stay updated with the latest UI/UX trends, techniques, and technologies, and apply them to improve design processes and deliverables., task=Stay updated with the latest UI/UX trends, techniques, and technologies, and apply them to improve design processes and deliverables} {original_statement=Present design concepts and solutions to stakeholders, articulating design rationale and incorporating feedback to refine designs., task=Present design concepts and solutions to stakeholders, articulating design rationale and incorporating feedback to refine designs} ",
+            "requiredQualifications": "{original_statement=Bachelor’s degree in Design, Human-Computer Interaction, or a related field., group=[{group=[{requirement=Bachelor’s degree in Design}, {requirement=Bachelor’s degree in Human-Computer Interaction}, {requirement=Bachelor’s degree in a related field}], group_type=OR}], group_type=AND} {original_statement=Minimum of 5 years of experience in UI/UX design, with a strong portfolio showcasing diverse design projects., requirement=Minimum of 5 years of experience in UI/UX design, with a strong portfolio showcasing diverse design projects} {original_statement=Proficiency in design software such as Adobe Creative Suite, Sketch, Figma, or similar tools., group=[{group=[{requirement=Proficiency in design software such as Adobe Creative Suite}, {requirement=Proficiency in design software such as Sketch}, {requirement=Proficiency in design software such as Figma}, {requirement=Proficiency in design software such as similar tools}], group_type=OR}], group_type=AND} {original_statement=Strong understanding of user-centered design principles and best practices., requirement=Strong understanding of user-centered design principles and best practices} {original_statement=Excellent communication and presentation skills, with the ability to articulate design decisions effectively., group=[{group=[{requirement=Excellent communication skills, with the ability to articulate design decisions effectively}, {requirement=Excellent presentation skills, with the ability to articulate design decisions effectively}], group_type=AND}], group_type=AND}",
+            "preferredSkills": "{original_statement=Experience with front-end development technologies such as HTML, CSS, and JavaScript., group=[{group=[{skill=Experience with front-end development technologies such as HTML}, {skill=Experience with front-end development technologies such as CSS}, {skill=Experience with front-end development technologies such as JavaScript}], group_type=AND}], group_type=AND} {original_statement=Familiarity with agile methodologies and working in an agile environment., group=[{group=[{skill=Familiarity with agile methodologies}, {skill=Working in an agile environment}], group_type=AND}], group_type=AND} {original_statement=Knowledge of accessibility standards and best practices in design., skill=Knowledge of accessibility standards and best practices in design} {original_statement=Experience in designing for a variety of platforms, including web, mobile, and emerging technologies like AR/VR., group=[{group=[{skill=Experience in designing for a variety of platforms, including web}, {skill=Experience in designing for a variety of platforms, including mobile}, {skill=Experience in designing for a variety of platforms, including emerging technologies like AR/VR}], group_type=AND}], group_type=AND}"
+
         }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Architect and implement robust machine learning pipelines and frameworks to support data-driven decision-making.",
-      "group": [
-        {
-          "task": "Architect robust machine learning pipelines and frameworks to support data-driven decision-making"
-        },
-        {
-          "task": "Implement robust machine learning pipelines and frameworks to support data-driven decision-making"
-        }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Conduct research and stay abreast of the latest advancements in machine learning and AI technologies to integrate into our solutions.",
-      "task": "Conduct research and stay abreast of the latest advancements in machine learning and AI technologies to integrate into our solutions"
-    },
-    {
-      "original_statement": "Oversee the end-to-end lifecycle of machine learning projects, from data collection and preprocessing to model evaluation and deployment.",
-      "task": "Oversee the end-to-end lifecycle of machine learning projects, from data collection and preprocessing to model evaluation and deployment"
-    },
-    {
-      "original_statement": "Ensure best practices in code quality, testing, and documentation are maintained across the team.",
-      "group": [
-        {
-          "group": [
-            {
-              "task": "Ensure best practices in code quality are maintained across the team"
-            },
-            {
-              "task": "Ensure best practices in testing are maintained across the team"
-            },
-            {
-              "task": "Ensure best practices in documentation are maintained across the team"
-            }
-          ],
-          "group_type": "AND"
-        }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Drive innovation by proposing and implementing new methodologies and tools to enhance the efficiency and effectiveness of machine learning processes.",
-      "group": [
-        {
-          "task": "Drive innovation by proposing new methodologies and tools to enhance the efficiency and effectiveness of machine learning processes"
-        },
-        {
-          "task": "Drive innovation by implementing new methodologies and tools to enhance the efficiency and effectiveness of machine learning processes"
-        }
-      ],
-      "group_type": "AND"
-    }
-  ],
-  "required_qualifications": [
-    {
-      "original_statement": "Bachelor’s or Master’s degree in Computer Science, Engineering, Mathematics, or a related field.",
-      "group": [
-        {
-          "group": [
-            {
-              "requirement": "Bachelor’s degree in Computer Science"
-            },
-            {
-              "requirement": "Bachelor’s degree in Engineering"
-            },
-            {
-              "requirement": "Bachelor’s degree in Mathematics"
-            },
-            {
-              "requirement": "Bachelor’s degree in a related field"
-            },
-            {
-              "requirement": "Master’s degree in Computer Science"
-            },
-            {
-              "requirement": "Master’s degree in Engineering"
-            },
-            {
-              "requirement": "Master’s degree in Mathematics"
-            },
-            {
-              "requirement": "Master’s degree in a related field"
-            }
-          ],
-          "group_type": "OR"
-        }
-      ],
-      "group_type": "OR"
-    },
-    {
-      "original_statement": "Minimum of 5 years of experience in machine learning, with at least 2 years in a leadership or tech lead role.",
-      "group": [
-        {
-          "requirement": "Minimum of 5 years of experience in machine learning"
-        },
-        {
-          "requirement": "At least 2 years in a leadership role"
-        },
-        {
-          "requirement": "At least 2 years in a tech lead role"
-        }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Strong proficiency in programming languages such as Python, R, or Java, and experience with machine learning frameworks like TensorFlow, PyTorch, or Scikit-learn.",
-      "group": [
-        {
-          "group": [
-            {
-              "requirement": "Strong proficiency in programming language Python"
-            },
-            {
-              "requirement": "Strong proficiency in programming language R"
-            },
-            {
-              "requirement": "Strong proficiency in programming language Java"
-            }
-          ],
-          "group_type": "OR"
-        },
-        {
-          "group": [
-            {
-              "requirement": "Experience with machine learning framework TensorFlow"
-            },
-            {
-              "requirement": "Experience with machine learning framework PyTorch"
-            },
-            {
-              "requirement": "Experience with machine learning framework Scikit-learn"
-            }
-          ],
-          "group_type": "OR"
-        }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Proven track record of deploying machine learning models in production environments.",
-      "requirement": "Proven track record of deploying machine learning models in production environments"
-    },
-    {
-      "original_statement": "Excellent problem-solving skills and the ability to work independently and collaboratively in a fast-paced environment.",
-      "group": [
-        {
-          "requirement": "Excellent problem-solving skills"
-        },
-        {
-          "requirement": "The ability to work independently in a fast-paced environment"
-        },
-        {
-          "requirement": "The ability to work collaboratively in a fast-paced environment"
-        }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Strong communication skills with the ability to convey complex technical concepts to non-technical stakeholders.",
-      "requirement": "Strong communication skills with the ability to convey complex technical concepts to non-technical stakeholders"
-    }
-  ],
-  "preferred_skills": [
-    {
-      "original_statement": "Experience with cloud platforms such as AWS, Google Cloud, or Azure for deploying machine learning solutions.",
-      "group": [
-        {
-          "group": [
-            {
-              "skill": "Experience with cloud platform AWS for deploying machine learning solutions"
-            },
-            {
-              "skill": "Experience with cloud platform Google Cloud for deploying machine learning solutions"
-            },
-            {
-              "skill": "Experience with cloud platform Azure for deploying machine learning solutions"
-            }
-          ],
-          "group_type": "OR"
-        }
-      ],
-      "group_type": "OR"
-    },
-    {
-      "original_statement": "Familiarity with big data technologies like Hadoop, Spark, or Kafka.",
-      "group": [
-        {
-          "group": [
-            {
-              "skill": "Familiarity with big data technology Hadoop"
-            },
-            {
-              "skill": "Familiarity with big data technology Spark"
-            },
-            {
-              "skill": "Familiarity with big data technology Kafka"
-            }
-          ],
-          "group_type": "OR"
-        }
-      ],
-      "group_type": "OR"
-    },
-    {
-      "original_statement": "Knowledge of deep learning techniques and natural language processing.",
-      "group": [
-        {
-          "skill": "Knowledge of deep learning techniques"
-        },
-        {
-          "skill": "Knowledge of natural language processing"
-        }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Experience with version control systems such as Git and continuous integration/continuous deployment (CI/CD) pipelines.",
-      "group": [
-        {
-          "skill": "Experience with version control systems such as Git"
-        },
-        {
-          "skill": "Experience with continuous integration/continuous deployment (CI/CD) pipelines"
-        }
-      ],
-      "group_type": "AND"
-    },
-    {
-      "original_statement": "Prior experience in a startup or agile development environment.",
-      "group": [
-        {
-          "group": [
-            {
-              "skill": "Prior experience in a startup"
-            },
-            {
-              "skill": "Prior experience in an agile development environment"
-            }
-          ],
-          "group_type": "OR"
-        }
-      ],
-      "group_type": "OR"
-    }
-  ],
-  "benefits": [
-    {
-      "original_statement": "Competitive salary and performance-based bonuses.",
-      "benefit": "Competitive salary"
-    },
-    {
-      "original_statement": "Competitive salary and performance-based bonuses.",
-      "benefit": "Performance-based bonuses"
-    },
-    {
-      "original_statement": "Comprehensive health, dental, and vision insurance plans.",
-      "benefit": "Comprehensive health insurance plans"
-    },
-    {
-      "original_statement": "Comprehensive health, dental, and vision insurance plans.",
-      "benefit": "Comprehensive dental insurance plans"
-    },
-    {
-      "original_statement": "Comprehensive health, dental, and vision insurance plans.",
-      "benefit": "Comprehensive vision insurance plans"
-    },
-    {
-      "original_statement": "Flexible working hours and remote work opportunities.",
-      "benefit": "Flexible working hours"
-    },
-    {
-      "original_statement": "Flexible working hours and remote work opportunities.",
-      "benefit": "Remote work opportunities"
-    },
-    {
-      "original_statement": "Generous paid time off and holiday schedule.",
-      "benefit": "Generous paid time off"
-    },
-    {
-      "original_statement": "Generous paid time off and holiday schedule.",
-      "benefit": "Generous holiday schedule"
-    },
-    {
-      "original_statement": "Professional development opportunities and access to industry conferences.",
-      "benefit": "Professional development opportunities"
-    },
-    {
-      "original_statement": "Professional development opportunities and access to industry conferences.",
-      "benefit": "Access to industry conferences"
-    },
-    {
-      "original_statement": "Collaborative and inclusive company culture that values diversity and innovation.",
-      "benefit": "Collaborative and inclusive company culture that values diversity and innovation"
-    }
-  ]
-}
 
 job_skills = {
     "Python": 30,
@@ -356,13 +44,44 @@ job_skills = {
     "Git": 10
 }
 
-industry_keywords = [
-    "machine learning",
-    "artificial intelligence",
-    "AI",
-    "data science"
-]
+# industry_keywords = [
+#     "machine learning",
+#     "artificial intelligence",
+#     "AI",
+#     "data science"
+# ]
+# industry_keywords = [
+#     "banking",
+#     "payments",
+#     "Savings account",
+#     "Loans"
+# ]
 
-score, explanation = get_match_score(cv, job, job_skills, industry_keywords)
+
+
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+transformed_cv = transform_dto_to_cv(cv)
+transformed_jd = transform_dto_to_jd(jd)
+
+print(transformed_cv)
+print(transformed_jd)
+
+domain = jd.get("message", "none")
+print("Domain: ", domain)
+industry_keywords = extract_industry_keywords(model_genai, domain)
+if not industry_keywords:
+    print("Failed to extract keywords")
+else:
+    print(industry_keywords)
+
+score, explanation = get_match_score(
+    model,
+    transformed_cv,
+    transformed_jd,
+    job_skills,
+    industry_keywords
+)
+# score, explanation = get_match_score(model, cv, job, job_skills, industry_keywords)
 print(f"Match Score: {score:.2f}%")
 print("Explanation:", explanation)
