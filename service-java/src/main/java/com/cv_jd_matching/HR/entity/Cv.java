@@ -96,8 +96,17 @@ public class Cv {
         this.others = others;
     }
 
+
     // Getters (exemplu)
     public String getName() {
         return name;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public Integer getId() {
+        return id;
     }
 }
