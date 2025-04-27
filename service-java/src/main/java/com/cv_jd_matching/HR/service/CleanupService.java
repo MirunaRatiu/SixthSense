@@ -18,7 +18,7 @@ import java.util.List;
 public class CleanupService {
     private final ICvRepository cvRepository;
     private final BlobServiceClient blobServiceClient;
-    private final WebClient webClient;
+    private final MatchingClient matchingClient;
 
     @Scheduled(cron = "0 0 2 * * *")
     @Transactional
@@ -27,12 +27,7 @@ public class CleanupService {
         List<Cv> cvs = cvRepository.findByCreatedAtBefore(Date.from(oneMonthAgo.atStartOfDay(ZoneId.systemDefault()).toInstant()));
         for(Cv cv: cvs){
             blobServiceClient.deleteCvBlob(cv.getFileName());
-            webClient.delete()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/delete/{item_type}/{item_id}")
-                            .build("cv", cv.getId()))
-                    .retrieve()
-                    .bodyToMono(String.class).subscribe();
+            matchingClient.deleteCv(cv.getId()).subscribe();
         }
         cvRepository.deleteAllByCreatedAtBefore(Date.from(oneMonthAgo.atStartOfDay(ZoneId.systemDefault()).toInstant()));
     }

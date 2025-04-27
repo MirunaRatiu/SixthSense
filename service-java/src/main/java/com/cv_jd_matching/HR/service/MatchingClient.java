@@ -3,9 +3,11 @@ package com.cv_jd_matching.HR.service;
 import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.JobDescriptionDTO;
 import com.cv_jd_matching.HR.dto.MatchResponseDTO;
+import com.cv_jd_matching.HR.error.WrongWeightsException;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Map;
 
 public interface MatchingClient {
     Mono<MatchResponseDTO> match(Integer cvId, Integer jobDescriptionId);
@@ -16,5 +18,9 @@ public interface MatchingClient {
 
     Mono<List<MatchResponseDTO>> matchCv(Integer cvId);
 
-    Mono<List<MatchResponseDTO>> matchJobDescription(Integer jdId);
+    Mono<List<MatchResponseDTO>> matchJobDescription(Integer jdId, Map<String, Integer> additionalSkills) throws WrongWeightsException;
+
+    Mono<String> deleteCv(Integer cvId);
+
+    Mono<String> deleteJobDescription(Integer jdId);
 }
