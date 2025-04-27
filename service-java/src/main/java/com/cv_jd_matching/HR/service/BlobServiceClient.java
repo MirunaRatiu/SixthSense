@@ -182,6 +182,7 @@ public class BlobServiceClient {
         return data.toString();
     }
 
+
     public static String extractCoreJobTitle(String jobTitle) {
         if (jobTitle == null || jobTitle.trim().isEmpty()) {
             return "JobTitle";
@@ -192,29 +193,51 @@ public class BlobServiceClient {
                 "principal engineer", "staff engineer", "architect", "it manager", "cto"
         );
 
-        String[] words = jobTitle.trim().split("\s+");
+        String[] words = jobTitle.trim().split("\\s+");
         int i = 0;
+        int lastWords = 0;
 
         while (i < words.length) {
             String currentWord = words[i].toLowerCase();
             String nextWord = (i + 1 < words.length) ? words[i + 1].toLowerCase() : "";
             String combined = currentWord + " " + nextWord;
 
+            lastWords = 0;
             if (seniorityTerms.contains(combined)) {
                 i += 2;
+                lastWords += 2;
             } else if (seniorityTerms.contains(currentWord)) {
                 i += 1;
+                lastWords += 1;
             } else {
                 break;
             }
         }
 
         if (i >= words.length) {
-            return "JobTitle";
+            i -= lastWords;
         }
 
-        return String.join(" ", Arrays.copyOfRange(words, i, words.length));
+        String coreTitle = String.join(" ", Arrays.copyOfRange(words, i, words.length));
+
+
+        if (words.length >= 2) {
+            String lastTwo = words[words.length - 2].toLowerCase() + " " + words[words.length - 1].toLowerCase();
+            if (seniorityTerms.contains(lastTwo)) {
+                return capitalizeFully(lastTwo);
+            }
+        }
+
+        return coreTitle;
     }
+
+    private static String capitalizeFully(String input) {
+        String[] parts = input.split("\\s+");
+        return Arrays.stream(parts)
+                .map(s -> s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase())
+                .collect(Collectors.joining(" "));
+    }
+
 
 
     public String uploadJobDescription(MultipartFile file) throws IOException {
@@ -236,7 +259,7 @@ public class BlobServiceClient {
         jobTitle = extractCoreJobTitle(jobTitle);
         System.out.println(jdData);
 
-// ia doar partea de după ultimul "-"
+
         if (jobTitle.contains("-")) {
             jobTitle = jobTitle.substring(jobTitle.lastIndexOf("-") + 1).trim();
         }
@@ -245,8 +268,23 @@ public class BlobServiceClient {
             jobTitle = "UnknownJobTitle";
         }
 
-        int currentJdsNumber = jobDescriptionRepository.countAll() + 1;
-        String correctFileName = "jd_" + currentJdsNumber + "_" + jobTitle.replaceAll("[^a-zA-Z0-9]", "_") + extension;
+
+        long nextJdNumber = 1;
+        Optional<JobDescription> lastJd = jobDescriptionRepository.findTopByOrderByFileNameDesc();
+        if (lastJd.isPresent()) {
+            String lastFileName = lastJd.get().getFileName();
+            String[] parts = lastFileName.split("_");
+            if (parts.length > 1) {
+                try {
+                    long lastNumber = Long.parseLong(parts[1]);
+                    nextJdNumber = lastNumber + 1;
+                } catch (NumberFormatException e) {
+                    System.err.println("Could not parse number from last JD filename: " + lastFileName);
+                }
+            }
+        }
+
+        String correctFileName = "jd_" + nextJdNumber + "_" + jobTitle + extension;
 
         BlobClient blobClient = containerClient.getBlobClient(correctFileName);
         InputStream newFileStream = new ByteArrayInputStream(fileBytes);
@@ -287,6 +325,4 @@ public class BlobServiceClient {
             throw e;
         }
     }
-
-
 }
