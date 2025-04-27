@@ -3,6 +3,8 @@ package com.cv_jd_matching.HR.service;
 import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.CvViewDTO;
 import com.cv_jd_matching.HR.entity.Cv;
+import com.cv_jd_matching.HR.error.InputException;
+import com.cv_jd_matching.HR.error.PathException;
 
 import java.util.List;
 
@@ -11,5 +13,7 @@ public interface CvService {
 
     void deleteFiles(List<Integer> ids);
 
-    CvDTO getCvByPath(String path);
+    CvDTO getCvByPath(String path) throws PathException;
+
+    CvViewDTO getCvById(Integer id) throws InputException;
 }

@@ -236,7 +236,9 @@ async def delete_by_id(item_type: str, item_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
 if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="127.0.0.1", port=8081)
+

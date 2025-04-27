@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -36,5 +37,7 @@ public interface ICvRepository extends CrudRepository<Cv, Integer> {
     @Modifying
     @Transactional
     void deleteAllByCreatedAtBefore(Date date);
+
+    List<Cv> findByCreatedAtBefore(Date date);
 
 }

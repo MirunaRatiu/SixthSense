@@ -4,6 +4,7 @@ import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.JobDescriptionDTO;
 import com.cv_jd_matching.HR.entity.JobDescription;
 import com.cv_jd_matching.HR.error.InvalidFileFormatException;
+import com.cv_jd_matching.HR.error.PathException;
 import com.cv_jd_matching.HR.service.CvService;
 import com.cv_jd_matching.HR.service.JobDescriptionService;
 import com.cv_jd_matching.HR.service.MatchingClient;
@@ -20,7 +21,7 @@ import java.util.Optional;
 
 @Controller
 @RequestMapping("/api/files")
-
+@CrossOrigin(origins = "http://localhost:4200")
 public class FileUploadController {
     @Autowired
     private BlobServiceClient blobServiceClient;

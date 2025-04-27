@@ -3,6 +3,8 @@ package com.cv_jd_matching.HR.service;
 import com.cv_jd_matching.HR.dto.JobDescriptionDTO;
 import com.cv_jd_matching.HR.dto.JobDescriptionViewDTO;
 import com.cv_jd_matching.HR.entity.JobDescription;
+import com.cv_jd_matching.HR.error.InputException;
+import com.cv_jd_matching.HR.error.PathException;
 import com.cv_jd_matching.HR.mapper.JobDescriptionMapper;
 import com.cv_jd_matching.HR.repository.IJobDescriptionRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,17 +20,17 @@ import java.util.stream.StreamSupport;
 @RequiredArgsConstructor
 public class JobDescriptionServiceImpl implements JobDescriptionService {
     private final IJobDescriptionRepository jobDescriptionRepository;
-    private final WebClient webClient;
+    private final MatchingClient matchingClient;
 
     public void deleteFiles(List<Integer> jobIDs){
-        List<JobDescription> jobDescriptions = jobIDs.stream().map(id -> jobDescriptionRepository.findById(id).get()).toList();
+        List<JobDescription> jobDescriptions = jobIDs.stream()
+                .map(jobDescriptionRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
         jobDescriptionRepository.deleteAll(jobDescriptions);
         for(Integer id: jobIDs){
-            webClient.method(HttpMethod.DELETE)
-                    .uri("/delete/jd")
-                    .bodyValue(id)
-                    .retrieve()
-                    .bodyToMono(String.class).subscribe();
+            matchingClient.deleteJobDescription(id).subscribe();
         }
     }
 
@@ -38,18 +40,18 @@ public class JobDescriptionServiceImpl implements JobDescriptionService {
         return jobList.stream().map(JobDescriptionMapper::mapEntityToViewDTO).toList();
     }
 
-    public JobDescriptionViewDTO getJobDescriptionById(Integer id){
+    public JobDescriptionViewDTO getJobDescriptionById(Integer id) throws InputException {
         Optional<JobDescription> job = jobDescriptionRepository.findById(id);
         if(job.isEmpty()){
-            throw new RuntimeException("Wrong id");
+            throw new InputException("Wrong id");
         }
         return JobDescriptionMapper.mapEntityToViewDTO(job.get());
     }
 
-    public JobDescriptionDTO getJobDescriptionByPath(String path){
+    public JobDescriptionDTO getJobDescriptionByPath(String path) throws PathException {
         Optional<JobDescription> job = jobDescriptionRepository.findJobDescriptionByPathName(path);
         if(job.isEmpty()){
-            throw new RuntimeException("Wrong url");
+            throw new PathException("Wrong url");
         }
         return JobDescriptionMapper.mapEntityToDTO(job.get());
     }

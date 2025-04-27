@@ -369,6 +369,7 @@ def normalize(text):
     """Normalizează textul: minuscule, elimină spațiile de la început/sfârșit."""
     return text.lower().strip() if isinstance(text, str) else ""
 
+
 def split_terms(text):
     """Împarte textul în termeni, inclusiv elemente cu caractere speciale."""
     # Spargem pe orice spațiu sau delimitator de propoziție, dar păstrăm termeni cu . sau +
@@ -832,6 +833,7 @@ def score_only_preferred_skills(jd_preferred_skills_list, cv, model):
 jd_json = json.dumps({
     "preferred_skills": [
     {
+
       "original_statement": "Experience with front-end development technologies such as HTML, CSS, and JavaScript.",
       "group": [
         {

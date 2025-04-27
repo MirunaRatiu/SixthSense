@@ -73,6 +73,7 @@ client = TestClient(app)
 
 
 
+
 # @pytest.fixture
 # def match_request_payload():
 #     return {
@@ -136,6 +137,7 @@ def test_match_cv_to_jd_success():
         "job_skills": {
             "Python": 30,
             "TensorFlow": 20,
+
             "AWS": 20,
             "PyTorch": 30
         },
@@ -146,7 +148,7 @@ def test_match_cv_to_jd_success():
         ]
     }
     response = client.post("/match/aux", json=match_request_payload)
-
+    
     assert response.status_code == 200
     response_json = response.json()
 
