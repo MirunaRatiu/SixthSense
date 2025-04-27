@@ -51,17 +51,28 @@
         <div *ngIf="typeof selectedJob.requiredQualifications === 'string'">
           <p>{{ selectedJob.requiredQualifications }}</p>
         </div>
+
+
+
+        <h3>Key Responsibilities</h3>
+        <div *ngIf="selectedJob.keyResponsabilities">
+          <p>{{ selectedJob.keyResponsabilities }}</p>
+        </div>
+
+        <h3>Desired Skills</h3>
+        <div class="skills-list" *ngIf="selectedJob.preferredSkills && selectedJob.preferredSkills.length > 0">
+          <p-chip *ngFor="let skill of selectedJob.preferredSkills" [label]="skill"></p-chip>
+        </div>
+        <div *ngIf="!selectedJob.preferredSkills || selectedJob.preferredSkills.length === 0">
+          <p>No preferred skills listed for this job.</p>
+        </div>
+
       </div>
 
       <div class="job-description-section">
         <p>{{ selectedJob.message }}</p>
 
-        <div *ngIf="selectedJob.keyResponsabilities && selectedJob.keyResponsabilities.length > 0">
-          <h4>Key Responsibilities</h4>
-          <ul>
-            <li *ngFor="let resp of selectedJob.keyResponsabilities">{{ resp }}</li>
-          </ul>
-        </div>
+
 
         <div *ngIf="selectedJob.benefits && selectedJob.benefits.length > 0">
           <h4>Benefits</h4>

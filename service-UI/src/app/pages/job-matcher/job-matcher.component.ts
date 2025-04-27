@@ -66,12 +66,12 @@ export class JobMatcherComponent implements OnInit {
     }
 
     // Initialize skill weights
-    if (this.selectedJob.preferredSkills) {
-      this.skillWeights = this.selectedJob.preferredSkills.map((skill) => ({
-        name: skill,
-        weight: 50 // Default weight of  => ({
-      }))
-    }
+    // if (this.selectedJob.preferredSkills) {
+    //   this.skillWeights = this.selectedJob.preferredSkills.map((skill) => ({
+    //     name: skill,
+    //     weight: 50 // Default weight of  => ({
+    //   }))
+    // }
 
     this.findMatches()
   }
