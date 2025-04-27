@@ -15,10 +15,14 @@ public interface IJobDescriptionRepository extends CrudRepository<JobDescription
         return Math.toIntExact(count());
     }
 
+
     @Query(value = "SELECT * FROM job_description " +
             "ORDER BY CAST(REGEXP_SUBSTR(file_name, '[0-9]+') AS UNSIGNED) DESC " +
             "LIMIT 1",
             nativeQuery = true)
     Optional<JobDescription> findTopByOrderByFileNameDesc();
+
+    Optional<JobDescription> findJobDescriptionByPathName(String path);
+
 
 }

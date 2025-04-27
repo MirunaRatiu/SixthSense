@@ -3,11 +3,13 @@ package com.cv_jd_matching.HR.entity;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.sql.Date;
 
 @Entity
 @Table(name = "job_description")
+@Data
 @JsonIdentityInfo(
         generator = ObjectIdGenerators.PropertyGenerator.class,
         property = "id",
