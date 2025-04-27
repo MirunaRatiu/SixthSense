@@ -4,6 +4,7 @@ import com.cv_jd_matching.HR.config.WebClientConfig;
 import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.JobDescriptionDTO;
 import com.cv_jd_matching.HR.dto.MatchRequestDTO;
+import com.cv_jd_matching.HR.dto.MatchResponseDTO;
 import com.cv_jd_matching.HR.entity.Cv;
 import com.cv_jd_matching.HR.entity.JobDescription;
 import com.cv_jd_matching.HR.mapper.CvMapper;
@@ -27,7 +28,7 @@ public class MatchingClientImpl implements MatchingClient{
     private final ICvRepository cvRepository;
     private final IJobDescriptionRepository jobDescriptionRepository;
 
-    public Mono<Integer> match(Integer cvId, Integer jobDescriptionId){
+    public Mono<MatchResponseDTO> match(Integer cvId, Integer jobDescriptionId){
         Optional<Cv> cv = cvRepository.findById(cvId);
         Optional<JobDescription> jobDescription = jobDescriptionRepository.findById(jobDescriptionId);
         if(cv.isEmpty() || jobDescription.isEmpty()){
@@ -44,18 +45,13 @@ public class MatchingClientImpl implements MatchingClient{
         jobSkills.put("AWS", 10);
         jobSkills.put("Git", 10);
 
-        List<String> industryKeywords = new ArrayList<>();
-        industryKeywords.add("machine learning");
-        industryKeywords.add("artificial intelligence");
-        industryKeywords.add("AI");
-        industryKeywords.add("data science");
-        MatchRequestDTO requestDTO = new MatchRequestDTO(cvDTO, jobDescriptionDTO, jobSkills, industryKeywords);
+        MatchRequestDTO requestDTO = new MatchRequestDTO(cvDTO, jobDescriptionDTO, jobSkills);
 
         return webClient.post()
                 .uri("/match/aux")
                 .bodyValue(requestDTO)
                 .retrieve()
-                .bodyToMono(Integer.class);
+                .bodyToMono(MatchResponseDTO.class);
     }
 
     public Mono<String> embedJobDescription(JobDescriptionDTO jobDescriptionDTO){
@@ -72,6 +68,26 @@ public class MatchingClientImpl implements MatchingClient{
                 .bodyValue(cvDTO)
                 .retrieve()
                 .bodyToMono(String.class);
+    }
+
+    public Mono<List<MatchResponseDTO>> matchCv(Integer cvId) {
+        return webClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/delete/cv/{item_id}")
+                        .build(cvId))
+                .retrieve()
+                .bodyToFlux(MatchResponseDTO.class)
+                .collectList();
+    }
+
+    public Mono<List<MatchResponseDTO>> matchJobDescription(Integer jdId) {
+        return webClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/delete/jd/{item_id}")
+                        .build(jdId))
+                .retrieve()
+                .bodyToFlux(MatchResponseDTO.class)
+                .collectList();
     }
 
 }

@@ -14,6 +14,7 @@ public class JobDescriptionMapper {
                 .preferredSkills(jobDescription.getPreferredSkills())
                 .requiredQualifications(jobDescription.getRequiredQualifications())
                 .id(jobDescription.getId())
+                .message(jobDescription.getMessage())
                 .build();
     }
 

@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @Controller
 @RequestMapping("/api/files")
-
+@CrossOrigin(origins = "http://localhost:4200")
 public class FileUploadController {
     @Autowired
     private BlobServiceClient blobServiceClient;

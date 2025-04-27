@@ -16,4 +16,5 @@ public class JobDescriptionDTO {
     private String requiredQualifications;
     private String preferredSkills;
     private Integer id;
+    private String message;
 }
