@@ -290,7 +290,7 @@ public class BlobServiceClient {
         InputStream newFileStream = new ByteArrayInputStream(fileBytes);
         blobClient.upload(newFileStream, fileBytes.length, true);
 
-        OffsetDateTime expiryTime = OffsetDateTime.now().plusHours(1);
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(30);
         BlobSasPermission permissions = new BlobSasPermission().setReadPermission(true);
         BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
         String sasToken = blobClient.generateSas(sasValues);
