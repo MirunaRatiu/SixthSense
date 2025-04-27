@@ -325,4 +325,37 @@ public class BlobServiceClient {
             throw e;
         }
     }
+
+    public boolean deleteCvBlob(String fileName) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            // Cannot delete if file name is invalid
+            return false;
+        }
+
+        try {
+            BlobContainerClient containerClient = getContainerClient(containerName1);
+            BlobClient blobClient = containerClient.getBlobClient(fileName);
+
+            // Optional: Check if the blob exists before attempting deletion
+            // This prevents an exception if the blob is already gone
+            if (!blobClient.exists()) {
+                System.out.println("Blob not found: " + fileName);
+                return false; // Indicate that the blob was not found
+            }
+
+            // Delete the blob
+            blobClient.delete();
+
+            System.out.println("Blob deleted successfully: " + fileName);
+            return true; // Indicate successful deletion
+
+        } catch (Exception e) {
+            // Log or handle the exception (e.g., permissions issues, network problems)
+            System.err.println("Failed to delete blob: " + fileName);
+            e.printStackTrace(); // Or use a logger
+            return false; // Indicate that deletion failed
+        }
+    }
+
+
 }

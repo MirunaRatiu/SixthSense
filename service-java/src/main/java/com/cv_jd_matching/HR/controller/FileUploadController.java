@@ -17,10 +17,10 @@ import com.cv_jd_matching.HR.service.BlobServiceClient;
 
 import java.io.IOException;
 import java.util.Optional;
-@CrossOrigin(origins = "http://localhost:4200") // Allow requests from http://localhost:4200
+
 @Controller
 @RequestMapping("/api/files")
-
+@CrossOrigin(origins = "http://localhost:4200")
 public class FileUploadController {
     @Autowired
     private BlobServiceClient blobServiceClient;

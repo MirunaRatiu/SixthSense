@@ -14,6 +14,7 @@ public class JobDescriptionMapper {
                 .preferredSkills(jobDescription.getPreferredSkills())
                 .requiredQualifications(jobDescription.getRequiredQualifications())
                 .id(jobDescription.getId())
+                .message(jobDescription.getMessage())
                 .build();
     }
 
@@ -21,6 +22,7 @@ public class JobDescriptionMapper {
         return JobDescriptionViewDTO.builder()
                 .jobTitle(jobDescription.getJobTitle())
                 .id(jobDescription.getId())
+                .accessLink(jobDescription.getPathName())
                 .build();
     }
 }
