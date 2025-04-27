@@ -3,6 +3,7 @@ package com.cv_jd_matching.HR.service;
 import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.CvViewDTO;
 import com.cv_jd_matching.HR.entity.Cv;
+import com.cv_jd_matching.HR.error.InputException;
 import com.cv_jd_matching.HR.error.PathException;
 import com.cv_jd_matching.HR.mapper.CvMapper;
 import com.cv_jd_matching.HR.repository.ICvRepository;
@@ -45,5 +46,14 @@ public class CvServiceImpl implements CvService{
             throw new PathException("Wrong path");
         }
         return CvMapper.mapEntityToDTO(cv.get());
+    }
+
+    @Override
+    public CvViewDTO getCvById(Integer id) throws InputException {
+        Optional<Cv> cv = cvRepository.findById(id);
+        if(cv.isEmpty()){
+            throw new InputException("The cv with that id is not saved in the database");
+        }
+        return CvMapper.mapEntityToViewDTO(cv.get());
     }
 }

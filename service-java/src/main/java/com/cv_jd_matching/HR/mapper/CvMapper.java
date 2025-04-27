@@ -29,25 +29,28 @@ public class CvMapper {
         return CvViewDTO.builder()
                 .name(cv.getName())
                 .id(cv.getId())
-                .skills(splitString(cv.getTechnicalSkills())) // this will be changed
+                .skills(splitString(cv.getTechnicalSkills(), "skill"))
+                .languages(splitString(cv.getForeignLanguages(), "language"))// this will be changed
                 .accessLink(cv.getPathName())
                 .build();
     }
 
-    private static List<String> splitString(String jsonString){
+    private static List<String> splitString(String jsonString, String fieldName) {
         String json = jsonString
                 .replace("=", ":")
                 .replaceAll("([a-zA-Z ]+):", "\"$1\":")
                 .replaceAll(":([^\",}\\]]+)", ":\"$1\"");
         Gson gson = new Gson();
         Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
-        List<Map<String, String>> skillList = gson.fromJson(json, listType);
+        List<Map<String, String>> listOfMaps = gson.fromJson(json, listType);
 
-        // Extract skill values
-        List<String> skills = new ArrayList<>();
-        for (Map<String, String> skillMap : skillList) {
-            skills.add(skillMap.get("skill"));
+        // Extract values for the specified field
+        List<String> values = new ArrayList<>();
+        for (Map<String, String> map : listOfMaps) {
+            if (map.containsKey(fieldName)) {
+                values.add(map.get(fieldName));
+            }
         }
-        return skills;
+        return values;
     }
 }
