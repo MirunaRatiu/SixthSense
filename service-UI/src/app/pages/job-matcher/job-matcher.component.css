@@ -102,9 +102,28 @@
 }
 
 .skills-header h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.total-weight-indicator {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius);
+  background-color: var(--gray-100);
+}
+
+.weight-balanced {
+  color: var(--success);
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.weight-unbalanced {
+  color: var(--warning);
+  background-color: rgba(245, 158, 11, 0.1);
 }
 
 .skills-actions {
@@ -177,6 +196,10 @@
 
 .skill-medium {
   color: var(--warning);
+}
+
+.skill-medium-low {
+  color: var(--warning-dark);
 }
 
 .skill-low {
@@ -588,6 +611,112 @@
   line-height: 1.6;
 }
 
+/* Add styles for locked skills */
+.skill-locked {
+  background-color: var(--gray-100);
+  border-color: var(--gray-300);
+  position: relative;
+}
+
+.skill-locked::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+
+/* Update the lock checkbox styling to make it more visible */
+.lock-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--transition-ease);
+  background-color: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  margin-right: 4px;
+}
+
+.lock-checkbox:hover {
+  background-color: var(--gray-200);
+  transform: scale(1.1);
+}
+
+.skill-locked .lock-checkbox {
+  background-color: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+/* Update the lock icons to make them more visible */
+.pi-lock,
+.pi-lock-open {
+  font-size: 1rem;
+}
+
+.pi-lock {
+  color: var(--primary);
+}
+
+.pi-lock-open {
+  color: var(--gray-600);
+}
+
+/* Update the delete button to make it more visible */
+.btn-icon.btn-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--transition-ease);
+}
+
+.btn-icon.btn-remove:hover {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: var(--danger);
+  transform: scale(1.1);
+}
+
+.btn-icon.btn-remove i {
+  font-size: 1rem;
+}
+
+/* Add a subtle pulse animation to the buttons when the skill is hovered */
+.skill-weight-item:hover .lock-checkbox,
+.skill-weight-item:hover .btn-icon.btn-remove {
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.locked-skills-indicator {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius);
+  background-color: var(--gray-100);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.btn-icon[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .jobs-page {
@@ -620,6 +749,12 @@
     gap: var(--spacing-3);
   }
 
+  .skills-header h2 {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+  }
+
   .skills-actions {
     width: 100%;
   }
@@ -646,5 +781,160 @@
   .pagination-controls {
     width: 100%;
     justify-content: space-between;
+  }
+}
+
+/* Add these missing styles at the end of the file */
+
+/* Lock icon styles */
+.pi-lock,
+.pi-lock-open {
+  font-size: 0.875rem;
+}
+
+.pi-lock {
+  color: var(--primary);
+}
+
+.pi-lock-open {
+  color: var(--gray-500);
+}
+
+/* Skill locked state */
+.skill-locked {
+  background-color: var(--gray-100);
+  border: 1px solid var(--gray-300);
+  position: relative;
+}
+
+.skill-locked .skill-weight-slider {
+  opacity: 0.6;
+}
+
+.skill-locked .skill-name {
+  font-weight: 600;
+}
+
+/* Locked skills indicator in header */
+.locked-skills-indicator {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--border-radius);
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.locked-skills-indicator .pi-lock {
+  font-size: 0.75rem;
+}
+
+/* Button states */
+button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Lock checkbox styling */
+.lock-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--transition-ease);
+}
+
+.lock-checkbox:hover {
+  background-color: var(--gray-200);
+}
+
+.skill-locked .lock-checkbox {
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+/* Job Aspects Card Styles */
+.aspects-card {
+  margin-bottom: var(--spacing-6);
+}
+
+.aspects-header {
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--gray-50);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.aspects-header h2 {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.aspects-content {
+  padding: var(--spacing-4);
+}
+
+.aspects-hint {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-4);
+}
+
+.aspects-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+}
+
+.aspect-weight-item {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-3);
+  background-color: var(--gray-50);
+}
+
+.aspect-weight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-3);
+}
+
+.aspect-name {
+  font-weight: 500;
+}
+
+.aspect-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.aspect-weight-value {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.aspects-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--spacing-4);
+}
+
+/* Responsive adjustments for aspects card */
+@media (max-width: 768px) {
+  .aspects-list {
+    grid-template-columns: 1fr;
   }
 }

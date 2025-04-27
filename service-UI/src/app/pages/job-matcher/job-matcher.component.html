@@ -36,7 +36,7 @@
         <div *ngIf="selectedJob.companyOverview">
           <p>{{ selectedJob.companyOverview }}</p>
         </div>
-
+        
         <h3 class="section-title">Job Requirements</h3>
         <div *ngIf="selectedJob.requiredQualifications && selectedJob.requiredQualifications.length > 0">
           <ul class="requirements-list">
@@ -52,17 +52,18 @@
           <p>{{ selectedJob.requiredQualifications }}</p>
         </div>
       </div>
-
+      
       <div class="job-description-section">
+        <h3>Job Description</h3>
         <p>{{ selectedJob.message }}</p>
-
+        
         <div *ngIf="selectedJob.keyResponsabilities && selectedJob.keyResponsabilities.length > 0">
           <h4>Key Responsibilities</h4>
           <ul>
             <li *ngFor="let resp of selectedJob.keyResponsabilities">{{ resp }}</li>
           </ul>
         </div>
-
+        
         <div *ngIf="selectedJob.benefits && selectedJob.benefits.length > 0">
           <h4>Benefits</h4>
           <ul>
@@ -76,39 +77,122 @@
   <!-- Skills Management Card -->
   <div class="card skills-card">
     <div class="skills-header">
-      <h2>Preferred Skills</h2>
+      <h2>
+        Preferred Skills 
+        <span class="total-weight-indicator" [ngClass]="{'weight-balanced': getTotalWeight() === 100, 'weight-unbalanced': getTotalWeight() !== 100}">
+          Total: {{ getTotalWeight() }}%
+        </span>
+        <span *ngIf="getLockedSkillsCount() > 0" class="locked-skills-indicator">
+          <i class="pi pi-lock"></i> {{ getLockedSkillsCount() }} locked
+        </span>
+      </h2>
       <div class="skills-actions">
         <div class="add-skill-form">
           <input type="text" [(ngModel)]="newSkill" placeholder="Add new skill" class="skill-input" (keyup.enter)="addSkill()">
-          <button class="btn btn-primary" (click)="addSkill()">
+          <button class="btn btn-primary" (click)="addSkill()" [disabled]="areAllSkillsLocked()">
             <i class="pi pi-plus"></i> Add
           </button>
         </div>
       </div>
     </div>
     <div class="skills-content">
-      <p class="skills-hint">Adjust the importance of each skill to find better matches</p>
-
+      <p class="skills-hint">Adjust the importance of each skill. The total weight will always be 100%.</p>
+      
       <div class="skills-list">
-        <div class="skill-weight-item" *ngFor="let skill of skillWeights; let i = index">
+        <div class="skill-weight-item" *ngFor="let skill of skillWeights; let i = index" [ngClass]="{'skill-locked': skill.locked}">
           <div class="skill-weight-header">
             <span class="skill-name">{{ skill.name }}</span>
             <div class="skill-actions">
               <span class="skill-weight-value" [ngClass]="getSkillLevelClass(skill.weight)">{{ skill.weight }}%</span>
-              <button class="btn-icon btn-remove" (click)="removeSkill(i)">
+              <div class="lock-checkbox" (click)="toggleLockSkill(i)" [title]="skill.locked ? 'Unlock skill' : 'Lock skill'">
+                <i class="pi" [ngClass]="skill.locked ? 'pi-lock' : 'pi-lock-open'"></i>
+              </div>
+              <button class="btn-icon btn-remove" (click)="removeSkill(i)" [disabled]="skill.locked">
                 <i class="pi pi-times"></i>
               </button>
             </div>
           </div>
           <div class="skill-weight-slider">
-            <p-slider [(ngModel)]="skill.weight" [min]="0" [max]="100" (onChange)="updateSkillWeight(skill)"></p-slider>
+            <p-slider [(ngModel)]="skill.weight" [min]="0" [max]="100" (onChange)="updateSkillWeight(skill, i)" [disabled]="skill.locked"></p-slider>
           </div>
         </div>
       </div>
-
+      
       <div class="skills-footer">
         <button class="btn btn-primary" (click)="applyWeights()" [disabled]="loadingCandidates">
-          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
+          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
+          {{ loadingCandidates ? 'Finding Matches...' : 'Apply Weights & Find Matches' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Job Aspects Weight Card -->
+  <div class="card aspects-card">
+    <div class="aspects-header">
+      <h2>
+        Job Aspects Importance
+        <span class="total-weight-indicator" [ngClass]="{'weight-balanced': getAspectsWeightTotal() === 100, 'weight-unbalanced': getAspectsWeightTotal() !== 100}">
+          Total: {{ getAspectsWeightTotal() }}%
+        </span>
+      </h2>
+    </div>
+    <div class="aspects-content">
+      <p class="aspects-hint">Adjust the importance of each job aspect for candidate matching. The total weight will always be 100%.</p>
+      
+      <div class="aspects-list">
+        <div class="aspect-weight-item">
+          <div class="aspect-weight-header">
+            <span class="aspect-name">Key Responsibilities</span>
+            <div class="aspect-actions">
+              <span class="aspect-weight-value" [ngClass]="getSkillLevelClass(aspectWeights.keyResponsibilities)">{{ aspectWeights.keyResponsibilities }}%</span>
+            </div>
+          </div>
+          <div class="aspect-weight-slider">
+            <p-slider [(ngModel)]="aspectWeights.keyResponsibilities" [min]="0" [max]="100" (onChange)="updateAspectWeight('keyResponsibilities')"></p-slider>
+          </div>
+        </div>
+        
+        <div class="aspect-weight-item">
+          <div class="aspect-weight-header">
+            <span class="aspect-name">Required Qualifications</span>
+            <div class="aspect-actions">
+              <span class="aspect-weight-value" [ngClass]="getSkillLevelClass(aspectWeights.requiredQualifications)">{{ aspectWeights.requiredQualifications }}%</span>
+            </div>
+          </div>
+          <div class="aspect-weight-slider">
+            <p-slider [(ngModel)]="aspectWeights.requiredQualifications" [min]="0" [max]="100" (onChange)="updateAspectWeight('requiredQualifications')"></p-slider>
+          </div>
+        </div>
+        
+        <div class="aspect-weight-item">
+          <div class="aspect-weight-header">
+            <span class="aspect-name">Preferred Skills</span>
+            <div class="aspect-actions">
+              <span class="aspect-weight-value" [ngClass]="getSkillLevelClass(aspectWeights.preferredSkills)">{{ aspectWeights.preferredSkills }}%</span>
+            </div>
+          </div>
+          <div class="aspect-weight-slider">
+            <p-slider [(ngModel)]="aspectWeights.preferredSkills" [min]="0" [max]="100" (onChange)="updateAspectWeight('preferredSkills')"></p-slider>
+          </div>
+        </div>
+        
+        <div class="aspect-weight-item">
+          <div class="aspect-weight-header">
+            <span class="aspect-name">Company Overview</span>
+            <div class="aspect-actions">
+              <span class="aspect-weight-value" [ngClass]="getSkillLevelClass(aspectWeights.companyOverview)">{{ aspectWeights.companyOverview }}%</span>
+            </div>
+          </div>
+          <div class="aspect-weight-slider">
+            <p-slider [(ngModel)]="aspectWeights.companyOverview" [min]="0" [max]="100" (onChange)="updateAspectWeight('companyOverview')"></p-slider>
+          </div>
+        </div>
+      </div>
+      
+      <div class="aspects-footer">
+        <button class="btn btn-primary" (click)="applyWeights()" [disabled]="loadingCandidates">
+          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
           {{ loadingCandidates ? 'Finding Matches...' : 'Apply Weights & Find Matches' }}
         </button>
       </div>
@@ -168,8 +252,8 @@
           <td>{{ candidate.education }}</td>
           <td>
             <div class="candidate-skills">
-              <span *ngFor="let lang of candidate.languages.slice(0, 2)" class="skill-tag">{{ lang }}</span>
-              <span *ngIf="candidate.languages.length > 2" class="skill-tag">+{{ candidate.languages.length - 2 }}</span>
+              <span *ngFor="let lang of (candidate.languages || candidate.languages || []).slice(0, 2)" class="skill-tag">{{ lang }}</span>
+              <span *ngIf="(candidate.languages || candidate.languages || []).length > 2" class="skill-tag">+{{ (candidate.languages || candidate.languages || []).length - 2 }}</span>
             </div>
           </td>
           <td>
