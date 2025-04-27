@@ -12,20 +12,20 @@
   </div>
 
   <!-- CV Upload Area -->
-  <div class="upload-area" 
-       [class.active]="isDragOver" 
-       (dragover)="onDragOver($event)" 
-       (dragleave)="onDragLeave($event)" 
+  <div class="upload-area"
+       [class.active]="isDragOver"
+       (dragover)="onDragOver($event)"
+       (dragleave)="onDragLeave($event)"
        (drop)="onDrop($event)">
     <div class="upload-content">
       <i class="pi pi-cloud-upload upload-icon"></i>
       <h3 class="upload-title">Upload CV Files</h3>
       <p class="upload-hint">Drag & drop your CV files here or click to browse</p>
-      <input type="file" 
-             #fileInput 
-             multiple 
-             accept=".pdf,.doc,.docx" 
-             class="file-input" 
+      <input type="file"
+             #fileInput
+             multiple
+             accept=".pdf,.doc,.docx"
+             class="file-input"
              (change)="onFileSelected($event)">
       <button class="btn btn-primary upload-btn" (click)="fileInput.click()">
         <i class="pi pi-upload"></i> Browse Files
@@ -52,7 +52,7 @@
     </div>
     <div class="upload-actions">
       <button class="btn btn-success" [disabled]="isUploading" (click)="processFiles()">
-        <i class="pi" [ngClass]="isUploading ? 'pi-spinner pi-spin' : 'pi-check'"></i> 
+        <i class="pi" [ngClass]="isUploading ? 'pi-spinner pi-spin' : 'pi-check'"></i>
         {{ isUploading ? 'Uploading...' : 'Upload CVs' }}
       </button>
       <button class="btn btn-outline" [disabled]="isUploading" (click)="clearFiles()">
@@ -116,10 +116,7 @@
             Skills
             <i class="pi pi-sort"></i>
           </th>
-          <th class="sortable-col">
-            Education
-            <i class="pi pi-sort"></i>
-          </th>
+
           <th class="sortable-col">
             Languages
             <i class="pi pi-sort"></i>
@@ -128,18 +125,15 @@
             Experience
             <i class="pi pi-sort"></i>
           </th>
-          <th class="sortable-col">
-            Certifications
-            <i class="pi pi-sort"></i>
-          </th>
+
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let candidate of candidates; let i = index" (click)="viewCandidateDetails(candidate)" class="clickable-row">
+        <tr *ngFor="let candidate of candidates; let i = index" (click)="viewCvInViewer(candidate)" class="clickable-row">
           <td class="checkbox-col" (click)="$event.stopPropagation()">
-            <div class="custom-checkbox" 
-                 [class.checked]="candidate.selected" 
+            <div class="custom-checkbox"
+                 [class.checked]="candidate.selected"
                  (click)="toggleCandidateSelection(i)"></div>
           </td>
           <td class="name-col">
@@ -153,11 +147,11 @@
               <span *ngIf="candidate.skills && candidate.skills.length > 3" class="skill-tag">+{{ candidate.skills.length - 3 }}</span>
             </div>
           </td>
-          <td>{{ candidate.education }}</td>
+
           <td>
             <div class="candidate-skills">
-              <span *ngFor="let lang of candidate.foreign_languages?.slice(0, 2)" class="skill-tag">{{ lang }}</span>
-              <span *ngIf="candidate.foreign_languages && candidate.foreign_languages.length > 2" class="skill-tag">+{{ candidate.foreign_languages.length - 2 }}</span>
+              <span *ngFor="let lang of candidate.languages?.slice(0, 2)" class="skill-tag">{{ lang }}</span>
+              <span *ngIf="candidate.languages && candidate.languages.length > 2" class="skill-tag">+{{ candidate.languages.length - 2 }}</span>
             </div>
           </td>
           <td>
@@ -165,15 +159,14 @@
               {{ getExperienceLevel(candidate) }}
             </span>
           </td>
+
           <td>
-            <div class="candidate-skills">
-              <span *ngFor="let cert of candidate.certifications?.slice(0, 2)" class="skill-tag">{{ cert }}</span>
-              <span *ngIf="candidate.certifications && candidate.certifications.length > 2" class="skill-tag">+{{ candidate.certifications.length - 2 }}</span>
-            </div>
-          </td>
-          <td>
-            <button class="btn btn-sm btn-outline" (click)="$event.stopPropagation(); viewCandidateDetails(candidate)">
-              <i class="pi pi-eye"></i> View
+            <button class="btn btn-sm btn-outline"
+                    (click)="$event.stopPropagation(); viewCvInViewer(candidate)"
+                    [disabled]="!candidate.accessLink || viewLoading[candidate.id]"
+                    title="{{ candidate.accessLink ? 'View CV in new tab' : 'No CV available' }}">
+              <i class="pi" [ngClass]="viewLoading[candidate.id] ? 'pi-spin pi-spinner' : 'pi-eye'"></i>
+              {{ viewLoading[candidate.id] ? 'Loading...' : 'View' }}
             </button>
             <button class="btn btn-sm btn-primary" (click)="$event.stopPropagation(); viewCandidateMatches(candidate)">
               <i class="pi pi-search"></i> Find Jobs

@@ -6,6 +6,7 @@ import  { Router } from "@angular/router"
 import  { Candidate } from "../../models/candidate.model"
 import  { CandidateService } from "../../services/candidate.service"
 import  { UploadService } from "../../services/upload.service"
+import {finalize} from 'rxjs';
 
 interface CandidateWithSelection extends Candidate {
   selected?: boolean
@@ -28,7 +29,7 @@ export class CandidatesComponent implements OnInit {
   loading = false
   error: string | null = null
   isDeleting = false
-
+  viewLoading: { [key: number]: boolean } = {}
   // File upload properties
   currentFile?: File
   progress = 0
@@ -48,6 +49,7 @@ export class CandidatesComponent implements OnInit {
 
   loadCandidates() {
     this.loading = true
+    this.viewLoading = {}
     this.error = null
     console.log("Starting to load candidates...")
 
@@ -145,6 +147,38 @@ export class CandidatesComponent implements OnInit {
         }, 5000)
       })
   }
+
+  viewCvInViewer(candidate: Candidate) {
+    if (!candidate.accessLink) {
+      this.handleComponentError("No access link available to view this CV.");
+      return;
+    }
+    if (this.viewLoading[candidate.id]) {
+      return; // Previne click-uri multiple în timp ce se încarcă
+    }
+
+    this.viewLoading[candidate.id] = true; // Setează încărcarea pentru acest candidat specific
+    this.error = null; // Resetează eroarea generală
+
+    console.log(`Requesting viewer for candidate ${candidate.id} with link: ${candidate.accessLink}`);
+
+    this.candidateService.getViewerUrl(candidate.accessLink).pipe(
+      finalize(() => {
+        this.viewLoading[candidate.id] = false; // Oprește încărcarea pentru acest candidat indiferent de rezultat
+      })
+    ).subscribe({
+      next: (viewerUrl) => {
+        console.log(`Received viewer URL: ${viewerUrl}`);
+        // Deschide URL-ul într-o filă nouă
+        window.open(viewerUrl, '_blank');
+      },
+      error: (err) => {
+        console.error(`Error getting viewer URL for candidate ${candidate.id}:`, err);
+        // Afișează eroarea specifică returnată de handleError din serviciu
+        this.handleComponentError(`Failed to get viewer URL: ${err.message}`);
+      }
+    });
+  }
   // Navigate to CV matcher with the selected candidate
   viewCandidateMatches(candidate: Candidate) {
     this.candidateService.setSelectedCandidate(candidate)
@@ -155,24 +189,24 @@ export class CandidatesComponent implements OnInit {
     // Helper method to extract filename from URL
     private getFilenameFromUrl(url: string): string | null {
       if (!url) return null
-  
+
       // Try to extract the filename from the URL
       const urlParts = url.split("/")
       let filename = urlParts[urlParts.length - 1]
-  
+
       // Remove any query parameters
       if (filename.includes("?")) {
         filename = filename.split("?")[0]
       }
-  
+
       // If we have a filename with an extension, return it
       if (filename && filename.includes(".")) {
         return decodeURIComponent(filename)
       }
-  
+
       return null
     }
-  
+
   // File upload methods
   onDragOver(event: DragEvent) {
     event.preventDefault()
@@ -419,5 +453,15 @@ export class CandidatesComponent implements OnInit {
   onRowsChange() {
     // Handle rows per page change
     this.loadCandidates()
+  }
+
+  private handleComponentError(message: string) {
+    this.error = message;
+    // Ascunde mesajul de eroare după 5 secunde (sau cât dorești)
+    setTimeout(() => {
+      if (this.error === message) { // Șterge doar dacă e aceeași eroare
+        this.error = null;
+      }
+    }, 5000);
   }
 }

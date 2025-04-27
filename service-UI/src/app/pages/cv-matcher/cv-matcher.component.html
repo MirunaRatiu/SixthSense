@@ -27,27 +27,27 @@
           <div class="candidate-info-value">{{ selectedCandidate.education }}</div>
         </div>
       </div>
-      
+
       <div class="candidate-description-section">
         <h3>Skills</h3>
         <div class="candidate-skills-list">
           <span *ngFor="let skill of selectedCandidate.skills" class="skill-tag">{{ skill }}</span>
         </div>
-        
-        <div *ngIf="selectedCandidate.foreign_languages && selectedCandidate.foreign_languages.length > 0">
+
+        <div *ngIf="selectedCandidate.languages && selectedCandidate.languages.length > 0">
           <h4>Languages</h4>
           <div class="candidate-skills-list">
-            <span *ngFor="let lang of selectedCandidate.foreign_languages" class="skill-tag">{{ lang }}</span>
+            <span *ngFor="let lang of selectedCandidate.languages" class="skill-tag">{{ lang }}</span>
           </div>
         </div>
-        
+
         <div *ngIf="selectedCandidate.certifications && selectedCandidate.certifications.length > 0">
           <h4>Certifications</h4>
           <ul>
             <li *ngFor="let cert of selectedCandidate.certifications">{{ cert }}</li>
           </ul>
         </div>
-        
+
         <div *ngIf="selectedCandidate.work_experience && selectedCandidate.work_experience.length > 0">
           <h4>Work Experience</h4>
           <ul>
@@ -62,7 +62,7 @@
   <div class="card actions-card">
     <div class="actions-content">
       <button class="btn btn-primary" (click)="findMatches()" [disabled]="loadingJobs">
-        <i class="pi" [ngClass]="loadingJobs ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
+        <i class="pi" [ngClass]="loadingJobs ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
         {{ loadingJobs ? 'Finding Matches...' : 'Find Matching Jobs' }}
       </button>
     </div>

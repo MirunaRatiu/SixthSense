@@ -36,7 +36,7 @@
         <div *ngIf="selectedJob.companyOverview">
           <p>{{ selectedJob.companyOverview }}</p>
         </div>
-        
+
         <h3 class="section-title">Job Requirements</h3>
         <div *ngIf="selectedJob.requiredQualifications && selectedJob.requiredQualifications.length > 0">
           <ul class="requirements-list">
@@ -52,17 +52,17 @@
           <p>{{ selectedJob.requiredQualifications }}</p>
         </div>
       </div>
-      
+
       <div class="job-description-section">
         <p>{{ selectedJob.message }}</p>
-        
+
         <div *ngIf="selectedJob.keyResponsabilities && selectedJob.keyResponsabilities.length > 0">
           <h4>Key Responsibilities</h4>
           <ul>
             <li *ngFor="let resp of selectedJob.keyResponsabilities">{{ resp }}</li>
           </ul>
         </div>
-        
+
         <div *ngIf="selectedJob.benefits && selectedJob.benefits.length > 0">
           <h4>Benefits</h4>
           <ul>
@@ -88,7 +88,7 @@
     </div>
     <div class="skills-content">
       <p class="skills-hint">Adjust the importance of each skill to find better matches</p>
-      
+
       <div class="skills-list">
         <div class="skill-weight-item" *ngFor="let skill of skillWeights; let i = index">
           <div class="skill-weight-header">
@@ -105,10 +105,10 @@
           </div>
         </div>
       </div>
-      
+
       <div class="skills-footer">
         <button class="btn btn-primary" (click)="applyWeights()" [disabled]="loadingCandidates">
-          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
+          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
           {{ loadingCandidates ? 'Finding Matches...' : 'Apply Weights & Find Matches' }}
         </button>
       </div>
@@ -168,8 +168,8 @@
           <td>{{ candidate.education }}</td>
           <td>
             <div class="candidate-skills">
-              <span *ngFor="let lang of candidate.foreign_languages.slice(0, 2)" class="skill-tag">{{ lang }}</span>
-              <span *ngIf="candidate.foreign_languages.length > 2" class="skill-tag">+{{ candidate.foreign_languages.length - 2 }}</span>
+              <span *ngFor="let lang of candidate.languages.slice(0, 2)" class="skill-tag">{{ lang }}</span>
+              <span *ngIf="candidate.languages.length > 2" class="skill-tag">+{{ candidate.languages.length - 2 }}</span>
             </div>
           </td>
           <td>
