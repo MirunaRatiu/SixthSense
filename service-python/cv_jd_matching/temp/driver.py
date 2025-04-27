@@ -1,9 +1,12 @@
 import os
 
+import chromadb
+
 from parsers.cv_parse import transform_dto_to_cv
-from generate_related_words import extract_industry_keywords
+from my_utils.generate_related_words import extract_industry_keywords
 from parsers.jd_parse import transform_dto_to_jd
-from matching_logic.match import get_match_score
+# from matching_logic.match import get_match_score
+from matching_logic.modified_match import get_match_score
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 
@@ -12,6 +15,9 @@ if not api_key:
     raise ValueError("GOOGLE_API_KEY environment variable not set")
 genai.configure(api_key=api_key)
 model_genai = genai.GenerativeModel('gemini-1.5-pro')
+
+chroma_client = chromadb.PersistentClient(path="../chroma_data")
+cv_collection_concat = chroma_client.get_or_create_collection(name="cv_embeddings_concatenated")
 
 
 cv = {
@@ -77,7 +83,8 @@ else:
 
 score, explanation = get_match_score(
     model,
-    transformed_cv,
+    cv_collection_concat,
+    121,
     transformed_jd,
     job_skills,
     industry_keywords

@@ -1,9 +1,14 @@
 import json
-
 from sentence_transformers import SentenceTransformer, util
 from rapidfuzz import fuzz
 import re
 from matching_logic.preferred_skills_logic import score_only_preferred_skills
+import torch
+
+# chroma_client = chromadb.PersistentClient(path="./chroma_data")
+# cv_collection_concat = chroma_client.get_or_create_collection(name="cv_embeddings_concatenated")
+
+# embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
 
 # Load embedding model in main for performance
 # model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -112,9 +117,9 @@ def calculate_technical_score(cv_skills: list[str], job_skills: dict[str, int]) 
     return (matched_weight / total_weight) * 100 if total_weight else 0.0
 
 # ---------- Certification Bonus ----------
-def calculate_certification_bonus(cv: dict, job_skills: dict[str, int]) -> float:
+def calculate_certification_bonus(cert_names: list, job_skills: dict[str, int]) -> float:
     threshold = CONFIG["thresholds"]["cert_match"]
-    cert_names = [cert["name"] for cert in cv.get("certifications", [])]
+    #cert_names = [cert["name"] for cert in cv.get("certifications", [])]
     matched = 0
     for skill in job_skills:
         for cert in cert_names:
@@ -125,7 +130,7 @@ def calculate_certification_bonus(cv: dict, job_skills: dict[str, int]) -> float
     return min(CONFIG["weights"]["cert_bonus_cap"], matched * 2.5)
 
 # ---------- Language Matching Score ----------
-def calculate_language_score(cv: dict, responsibilities: list, qualifications: list) -> float:
+def calculate_language_score(cv_languages: list, responsibilities: list, qualifications: list) -> float:
     # List of 50 common languages (focus on Europe)
     languages_list = [
         "English", "German", "French", "Spanish", "Italian", "Dutch", "Portuguese", "Russian",
@@ -156,7 +161,7 @@ def calculate_language_score(cv: dict, responsibilities: list, qualifications: l
         return 0.0  # No languages mentioned, no score
 
     # CV languages
-    cv_languages = [normalize(lang.get("language", "")) for lang in cv.get("foreign_languages", [])]
+    #cv_languages = [normalize(lang.get("language", "")) for lang in cv.get("foreign_languages", [])]
 
     matched_languages = []
     for lang in mentioned_languages:
@@ -169,9 +174,11 @@ def calculate_language_score(cv: dict, responsibilities: list, qualifications: l
 
 
 # ---------- Semantic Scoring ----------
-def embed_match_score(model: SentenceTransformer, text: str, cv_text: str, label: str = "Task") -> float:
+def embed_match_score(model: SentenceTransformer, text: str, cv_embedding: list, label: str = "Task") -> float:
     embedding1 = model.encode(text, convert_to_tensor=True)
-    embedding2 = model.encode(cv_text, convert_to_tensor=True)
+    #embedding2 = model.encode(cv_text, convert_to_tensor=True)
+
+    embedding2 = torch.tensor(cv_embedding)
     raw_score = float(util.pytorch_cos_sim(embedding1, embedding2).item()) * 100
     print(f"[Semantic] {label}: '{text}' → Raw Score: {raw_score:.2f}")
 
@@ -182,12 +189,12 @@ def embed_match_score(model: SentenceTransformer, text: str, cv_text: str, label
         return raw_score * scale["medium_scale"]
     return min(raw_score, 100.0)
 
-def score_group(model: SentenceTransformer, group: dict, cv_text: str, match_type: str = "task") -> float:
+def score_group(model: SentenceTransformer, group: dict, cv_embedding: list, match_type: str = "task") -> float:
     label = "Task" if match_type == "task" else "Requirement"
     if match_type in group:
-        return embed_match_score(model, group[match_type], cv_text, label)
+        return embed_match_score(model, group[match_type], cv_embedding, label)
     if "group" in group:
-        sub_scores = [score_group(model, sub, cv_text, match_type) for sub in group["group"]]
+        sub_scores = [score_group(model, sub, cv_embedding, match_type) for sub in group["group"]]
         if not sub_scores:
             return 0.0
         group_type = group.get("group_type", "AND")
@@ -196,20 +203,34 @@ def score_group(model: SentenceTransformer, group: dict, cv_text: str, match_typ
         return group_score
     return 0.0
 
-def calculate_semantic_score(model: SentenceTransformer, responsibilities: list, qualifications: list, cv_text: str) -> tuple[ float, float]:
-    resp_scores = [score_group(model, r, cv_text, match_type="task") for r in responsibilities]
+def calculate_semantic_score(model: SentenceTransformer, responsibilities: list, qualifications: list, cv_embedding: list) -> tuple[ float, float]:
+    resp_scores = [score_group(model, r, cv_embedding, match_type="task") for r in responsibilities]
     resp_score = sum(resp_scores) / len(resp_scores) if resp_scores else 0.0
 
-    qual_scores = [score_group(model, q, cv_text, match_type="requirement") for q in qualifications]
+    qual_scores = [score_group(model, q, cv_embedding, match_type="requirement") for q in qualifications]
     qual_score = sum(qual_scores) / len(qual_scores) if qual_scores else 0.0
 
     print(f"[Semantic Combined] Responsibilities: {resp_score:.2f}%, Qualifications: {qual_score:.2f}%")
     return resp_score, qual_score
 
 # ---------- Final Scoring ----------
-def get_match_score(model: SentenceTransformer, cv: dict, job: dict, job_skills: dict[str, int], industry_keywords: list[str]) -> tuple[float, dict]:
-    cv_text = extract_cv_text(cv)
-    cv_skills = [s['skill'] for s in cv.get('technical_skills', [])]
+def get_match_score(model: SentenceTransformer, cv_collection_concat, cv_id: int, job: dict, job_skills: dict[str, int], industry_keywords: list[str]) -> tuple[float, dict]:
+    #cv_text = extract_cv_text(cv)
+    #cv_skills = [s['skill'] for s in cv.get('technical_skills', [])]
+    result = cv_collection_concat.get(ids=[f"{cv_id}"], include=["metadatas", "embeddings", "documents"])
+    cv_skills = json.loads(result["metadatas"][0]["skills"])
+    cv_text = result["documents"][0]
+    cv_languages = json.loads(result["metadatas"][0]["languages"])
+    cv_cert = json.loads(result["metadatas"][0]["certifications"])
+    cv_embedding = result["embeddings"][0]
+    cv_prioritized_sources = {
+        "tech_skills": json.loads(result["metadatas"][0]["tech_skills"]),
+        "project_techs": json.loads(result["metadatas"][0]["project_techs"]),
+        "work_techs": json.loads(result["metadatas"][0]["work_techs"]),
+        "cert_techs": json.loads(result["metadatas"][0]["cert_techs"]),
+        "experience_descriptions": json.loads(result["metadatas"][0]["experience_descriptions"]),  # Lista nouă inserată aici
+        "fallback_texts": json.loads(result["metadatas"][0]["fallback_texts"]),
+    }
 
     print("\n==== Normalized CV Text ====")
     print(cv_text)
@@ -217,20 +238,20 @@ def get_match_score(model: SentenceTransformer, cv: dict, job: dict, job_skills:
 
     industry_score = calculate_industry_score(cv_text, industry_keywords)
     technical_score = calculate_technical_score(cv_skills, job_skills)
-    cert_bonus = calculate_certification_bonus(cv, job_skills)
+    cert_bonus = calculate_certification_bonus(cv_cert, job_skills)
 
     responsibilities = job.get("key_responsibilities", [])
     qualifications = job.get("required_qualifications", [])
     print("Responsibilities found:", responsibilities)
     print("Qualifications found:", qualifications)
 
-    language_score = calculate_language_score(cv, responsibilities, qualifications)
+    language_score = calculate_language_score(cv_languages, responsibilities, qualifications)
 
     # semantic score is up to 75% fron the 60% of the total
-    resp_score, qual_score = calculate_semantic_score(model, responsibilities, qualifications, cv_text)
+    resp_score, qual_score = calculate_semantic_score(model, responsibilities, qualifications, cv_embedding.tolist())
 
     job_skills = job.get("preferred_skills", [])
-    preferred_skills_score = score_only_preferred_skills(model, job_skills, cv) * 100
+    preferred_skills_score = score_only_preferred_skills(model, job_skills, cv_prioritized_sources) * 100
 
     w = CONFIG["weights"]
     final_score = w["industry"] * industry_score + w["technical"] * (technical_score + cert_bonus) + w["semantic"] * ((w["responsibilities"] * resp_score) + (w["qualifications"] * qual_score) + (w["preferred_skills"] * preferred_skills_score) + (w["foreign_languages"]*language_score))
@@ -253,3 +274,5 @@ def get_match_score(model: SentenceTransformer, cv: dict, job: dict, job_skills:
     )
 
     return final_score, explanation
+
+

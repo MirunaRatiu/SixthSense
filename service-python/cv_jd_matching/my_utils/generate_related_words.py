@@ -1,10 +1,6 @@
-import os
 import json
 import google.generativeai as genai
-from dotenv import load_dotenv
 from google.generativeai import GenerativeModel
-
-load_dotenv()
 
 
 def extract_industry_keywords(model: GenerativeModel, domain):

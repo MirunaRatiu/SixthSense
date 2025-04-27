@@ -310,6 +310,8 @@ SYNONYM_MAP = {
                           "thymeleaf"],  # Am adăugat Thymeleaf specific pt Sara
     "web development": ["html", "css", "javascript", "python", "java", "php", "node.js", "react", "angular", "vue",
                         "backend", "frontend", "full stack", "springboot", "mysql", "git", "gradle"],
+    "web": ["html", "css", "javascript", "python", "java", "php", "node.js", "react", "angular", "vue",
+                        "backend", "frontend", "full stack", "springboot", "mysql", "git", "gradle"],
     # Am adăugat SpringBoot, MySQL, Git, Gradle specifice pt Sara
     "front end development": ["html", "css", "javascript", "react", "angular", "vue", "typescript", "ui frameworks",
                               "responsive design", "frontend", "thymeleaf"],
@@ -328,6 +330,11 @@ def normalize(text):
     """Normalizează textul: minuscule, elimină spațiile de la început/sfârșit."""
     return text.lower().strip() if isinstance(text, str) else ""
 
+def split_terms(text):
+    """Împarte textul în termeni, inclusiv elemente cu caractere speciale."""
+    # Spargem pe orice spațiu sau delimitator de propoziție, dar păstrăm termeni cu . sau +
+    return re.findall(r'\w[\w\+\#\.]*', text.lower())
+
 def extract_text(item):
     """Extrage textul relevant (skill/task/requirement) dintr-un item din JD."""
     # Prioritizează skill-uri tehnice dacă sunt marcate
@@ -336,7 +343,10 @@ def extract_text(item):
             text = normalize(item[key])
             # Simplificare: Verificăm dacă textul conține *vreun* cuvânt cheie tehnic
             # Pentru o logică mai fină, am putea returna cuvântul cheie specific găsit
-            if any(re.search(r'\b' + re.escape(kw) + r'\b', text, re.IGNORECASE) for kw in TECHNICAL_KEYWORDS):
+            text_terms = split_terms(text)
+            skill_terms = [normalize(kw) for kw in TECHNICAL_KEYWORDS]
+
+            if any(term in text_terms for term in skill_terms):
                  print(f"Extracting TECHNICAL text: '{text}'")
                  return text # Returnează textul complet dacă e tehnic
             else:
@@ -345,157 +355,157 @@ def extract_text(item):
     print(f"Warning: No skill/task/requirement key found in item: {item}")
     return ""
 
-def prioritized_flatten(cv):
-    """
-    Extrage și prioritizează textul din diferite secțiuni ale CV-ului,
-    incluzând descrierile din experiență cu prioritate dedicată.
-    """
-    print("\n--- Extragere și Prioritizare Text CV ---")
-
-    # 1. Technical Skills (Prioritate maximă)
-    tech_skills = [normalize(item.get("skill", "")) for item in cv.get("technical_skills", [])]
-    print(f"Technical Skills: {len(tech_skills)} items")
-
-    # 2. Project Experience (Tehnologii + Descrieri)
-    project_techs = []
-    project_descriptions = []
-    print(f"Processing Project Experience ({len(cv.get('project_experience', []))} items)...")
-    for i, proj in enumerate(cv.get("project_experience", [])):
-        # Extrage Tehnologii
-        techs = [normalize(tech) for tech in proj.get("technologies", [])]
-        project_techs.extend(techs)
-        # Extrage Descrierea
-        description = proj.get("description", "")
-        if isinstance(description, str):
-            project_descriptions.append(normalize(description))
-        elif isinstance(description, list): # Dacă descrierea e o listă de string-uri
-            project_descriptions.extend([normalize(d) for d in description if isinstance(d, str)])
-        # print(f"  Project {i+1}: Found {len(techs)} techs, Description length: {len(description) if isinstance(description, (str, list)) else 0}")
-    print(f"Project Technologies: {len(project_techs)} items")
-    # print(f"Project Descriptions: {len(project_descriptions)} items") # Afișare opțională
-
-    # 3. Work Experience (Tehnologii + Descrieri)
-    work_techs = []
-    work_descriptions = []
-    print(f"Processing Work Experience ({len(cv.get('work_experience', []))} items)...")
-    for i, job in enumerate(cv.get("work_experience", [])):
-        # Extrage Tehnologii
-        techs = [normalize(tech) for tech in job.get("technologies", [])]
-        work_techs.extend(techs)
-        # Extrage Descrierea
-        description = job.get("description", "")
-        if isinstance(description, str):
-            work_descriptions.append(normalize(description))
-        elif isinstance(description, list): # Dacă descrierea e o listă de string-uri
-            work_descriptions.extend([normalize(d) for d in description if isinstance(d, str)])
-        # print(f"  Work {i+1}: Found {len(techs)} techs, Description length: {len(description) if isinstance(description, (str, list)) else 0}")
-    print(f"Work Technologies: {len(work_techs)} items")
-    # print(f"Work Descriptions: {len(work_descriptions)} items") # Afișare opțională
-
-    # Combinăm descrierile și eliminăm duplicatele
-    experience_descriptions = sorted(list(set(project_descriptions + work_descriptions)))
-    print(f"Combined Experience Descriptions (Unique): {len(experience_descriptions)} items")
-
-
-    # 4. Certifications (Tehnologii + Nume)
-    cert_techs = []
-    cert_names = []
-    print(f"Processing Certifications ({len(cv.get('certifications', []))} items)...")
-    for i, cert in enumerate(cv.get("certifications", [])):
-        techs = [normalize(tech) for tech in cert.get("technologies", [])]
-        cert_techs.extend(techs)
-        if "name" in cert:
-             name = normalize(cert.get("name", ""))
-             cert_names.append(name)
-    print(f"Certification Technologies: {len(cert_techs)} items")
-    print(f"Certification Names: {len(cert_names)} items")
-
-
-    # 5. Fallback Texts (Educație, Altele, și *alte* câmpuri din experiență/certificări)
-    fallback_texts = []
-    print("Processing Fallback Texts (Education, Others, etc.)...")
-    # Includem și numele certificatelor în fallback pentru potrivire generală
-    fallback_texts.extend(cert_names)
-
-    # Iterăm prin secțiuni, dar EXCLUDEM explicit 'technologies' și 'description'
-    # din Project/Work Experience, deoarece sunt deja tratate cu prioritate mai mare.
-    sections_for_fallback = {
-        "education": ["institution", "degree", "field_of_study"], # Adaugă câmpuri relevante
-        "others": None, # Procesează toate valorile din 'others'
-        "project_experience": ["title"], # Extrage doar titlul din proiecte ca fallback
-        "work_experience": ["title", "company"], # Extrage titlu/companie din work ca fallback
-        "certifications": ["institution"] # Extrage instituția certificatului ca fallback (numele e deja adăugat)
-        # Adaugă/elimină secțiuni/câmpuri după nevoie
-    }
-
-    for section_key, relevant_keys in sections_for_fallback.items():
-        entries = cv.get(section_key, [])
-        if not entries: continue
-
-        if isinstance(entries, dict): # Cazul 'others'
-            # Procesăm toate valorile din dicționarul 'others'
-            if section_key == 'others':
-                for sub_key, sub_value in entries.items():
-                    if isinstance(sub_value, str):
-                        fallback_texts.append(normalize(sub_value))
-                    elif isinstance(sub_value, list):
-                        for item in sub_value:
-                             if isinstance(item, str):
-                                fallback_texts.append(normalize(item))
-                             elif isinstance(item, dict):
-                                fallback_texts.extend([normalize(v) for v in item.values() if isinstance(v, str)])
-            else: # Convertim alte dicționare în liste (deși structura standard e listă)
-                entries = [entries]
-
-        if isinstance(entries, list): # Procesăm liste (cazul standard pt majoritatea secțiunilor)
-             for entry in entries:
-                if isinstance(entry, dict):
-                    # Extragem doar cheile relevante specificate, dacă există
-                    keys_to_extract = relevant_keys if relevant_keys is not None else entry.keys()
-                    for key in keys_to_extract:
-                        value = entry.get(key)
-                        if isinstance(value, str):
-                            fallback_texts.append(normalize(value))
-                        elif isinstance(value, list):
-                            for item in value:
-                                if isinstance(item, str):
-                                    fallback_texts.append(normalize(item))
-                                # Extindem și din dicționare din liste (ex: Contact Information în Others)
-                                elif isinstance(item, dict) and section_key == 'others':
-                                     fallback_texts.extend([normalize(v) for v in item.values() if isinstance(v, str)])
-                elif isinstance(entry, str): # Unele secțiuni pot fi liste de string-uri direct
-                    fallback_texts.append(normalize(entry))
-
-
-    # Eliminăm duplicatele și textele goale din fallback final
-    fallback_texts = sorted(list(set(filter(None, fallback_texts))))
-    print(f"Fallback Texts (Diverse - Unique): {len(fallback_texts)} items")
-    print("--- Sfârșit Extragere CV ---")
-
-    # Returnăm sursele în ordinea priorității dorite:
-    # 1. Skill-uri Tehnice Directe
-    # 2. Tehnologii Proiecte
-    # 3. Tehnologii Work
-    # 4. Tehnologii Certificări
-    # 5. Descrieri Experiență (Proiecte + Work) <- NOU
-    # 6. Texte Fallback (Educație, Altele, Nume Certificări, Titluri etc.)
-    prioritized_sources = [
-        tech_skills,
-        project_techs,
-        work_techs,
-        cert_techs,
-        experience_descriptions, # Lista nouă inserată aici
-        fallback_texts
-    ]
-    # Verificăm că toate sunt liste de stringuri
-    for i, source_list in enumerate(prioritized_sources):
-        if not isinstance(source_list, list):
-            print(f"Warning: Sursa {i} nu este o listă!")
-        # Optional: Verifică tipul elementelor
-        # if source_list and not all(isinstance(item, str) for item in source_list):
-        #    print(f"Warning: Sursa {i} conține elemente non-string!")
-
-    return prioritized_sources
+# def prioritized_flatten(cv):
+#     """
+#     Extrage și prioritizează textul din diferite secțiuni ale CV-ului,
+#     incluzând descrierile din experiență cu prioritate dedicată.
+#     """
+#     print("\n--- Extragere și Prioritizare Text CV ---")
+#
+#     # 1. Technical Skills (Prioritate maximă)
+#     tech_skills = [normalize(item.get("skill", "")) for item in cv.get("technical_skills", [])]
+#     print(f"Technical Skills: {len(tech_skills)} items")
+#
+#     # 2. Project Experience (Tehnologii + Descrieri)
+#     project_techs = []
+#     project_descriptions = []
+#     print(f"Processing Project Experience ({len(cv.get('project_experience', []))} items)...")
+#     for i, proj in enumerate(cv.get("project_experience", [])):
+#         # Extrage Tehnologii
+#         techs = [normalize(tech) for tech in proj.get("technologies", [])]
+#         project_techs.extend(techs)
+#         # Extrage Descrierea
+#         description = proj.get("description", "")
+#         if isinstance(description, str):
+#             project_descriptions.append(normalize(description))
+#         elif isinstance(description, list): # Dacă descrierea e o listă de string-uri
+#             project_descriptions.extend([normalize(d) for d in description if isinstance(d, str)])
+#         # print(f"  Project {i+1}: Found {len(techs)} techs, Description length: {len(description) if isinstance(description, (str, list)) else 0}")
+#     print(f"Project Technologies: {len(project_techs)} items")
+#     # print(f"Project Descriptions: {len(project_descriptions)} items") # Afișare opțională
+#
+#     # 3. Work Experience (Tehnologii + Descrieri)
+#     work_techs = []
+#     work_descriptions = []
+#     print(f"Processing Work Experience ({len(cv.get('work_experience', []))} items)...")
+#     for i, job in enumerate(cv.get("work_experience", [])):
+#         # Extrage Tehnologii
+#         techs = [normalize(tech) for tech in job.get("technologies", [])]
+#         work_techs.extend(techs)
+#         # Extrage Descrierea
+#         description = job.get("description", "")
+#         if isinstance(description, str):
+#             work_descriptions.append(normalize(description))
+#         elif isinstance(description, list): # Dacă descrierea e o listă de string-uri
+#             work_descriptions.extend([normalize(d) for d in description if isinstance(d, str)])
+#         # print(f"  Work {i+1}: Found {len(techs)} techs, Description length: {len(description) if isinstance(description, (str, list)) else 0}")
+#     print(f"Work Technologies: {len(work_techs)} items")
+#     # print(f"Work Descriptions: {len(work_descriptions)} items") # Afișare opțională
+#
+#     # Combinăm descrierile și eliminăm duplicatele
+#     experience_descriptions = sorted(list(set(project_descriptions + work_descriptions)))
+#     print(f"Combined Experience Descriptions (Unique): {len(experience_descriptions)} items")
+#
+#
+#     # 4. Certifications (Tehnologii + Nume)
+#     cert_techs = []
+#     cert_names = []
+#     print(f"Processing Certifications ({len(cv.get('certifications', []))} items)...")
+#     for i, cert in enumerate(cv.get("certifications", [])):
+#         techs = [normalize(tech) for tech in cert.get("technologies", [])]
+#         cert_techs.extend(techs)
+#         if "name" in cert:
+#              name = normalize(cert.get("name", ""))
+#              cert_names.append(name)
+#     print(f"Certification Technologies: {len(cert_techs)} items")
+#     print(f"Certification Names: {len(cert_names)} items")
+#
+#
+#     # 5. Fallback Texts (Educație, Altele, și *alte* câmpuri din experiență/certificări)
+#     fallback_texts = []
+#     print("Processing Fallback Texts (Education, Others, etc.)...")
+#     # Includem și numele certificatelor în fallback pentru potrivire generală
+#     fallback_texts.extend(cert_names)
+#
+#     # Iterăm prin secțiuni, dar EXCLUDEM explicit 'technologies' și 'description'
+#     # din Project/Work Experience, deoarece sunt deja tratate cu prioritate mai mare.
+#     sections_for_fallback = {
+#         "education": ["institution", "degree", "field_of_study"], # Adaugă câmpuri relevante
+#         "others": None, # Procesează toate valorile din 'others'
+#         "project_experience": ["title"], # Extrage doar titlul din proiecte ca fallback
+#         "work_experience": ["title", "company"], # Extrage titlu/companie din work ca fallback
+#         "certifications": ["institution"] # Extrage instituția certificatului ca fallback (numele e deja adăugat)
+#         # Adaugă/elimină secțiuni/câmpuri după nevoie
+#     }
+#
+#     for section_key, relevant_keys in sections_for_fallback.items():
+#         entries = cv.get(section_key, [])
+#         if not entries: continue
+#
+#         if isinstance(entries, dict): # Cazul 'others'
+#             # Procesăm toate valorile din dicționarul 'others'
+#             if section_key == 'others':
+#                 for sub_key, sub_value in entries.items():
+#                     if isinstance(sub_value, str):
+#                         fallback_texts.append(normalize(sub_value))
+#                     elif isinstance(sub_value, list):
+#                         for item in sub_value:
+#                              if isinstance(item, str):
+#                                 fallback_texts.append(normalize(item))
+#                              elif isinstance(item, dict):
+#                                 fallback_texts.extend([normalize(v) for v in item.values() if isinstance(v, str)])
+#             else: # Convertim alte dicționare în liste (deși structura standard e listă)
+#                 entries = [entries]
+#
+#         if isinstance(entries, list): # Procesăm liste (cazul standard pt majoritatea secțiunilor)
+#              for entry in entries:
+#                 if isinstance(entry, dict):
+#                     # Extragem doar cheile relevante specificate, dacă există
+#                     keys_to_extract = relevant_keys if relevant_keys is not None else entry.keys()
+#                     for key in keys_to_extract:
+#                         value = entry.get(key)
+#                         if isinstance(value, str):
+#                             fallback_texts.append(normalize(value))
+#                         elif isinstance(value, list):
+#                             for item in value:
+#                                 if isinstance(item, str):
+#                                     fallback_texts.append(normalize(item))
+#                                 # Extindem și din dicționare din liste (ex: Contact Information în Others)
+#                                 elif isinstance(item, dict) and section_key == 'others':
+#                                      fallback_texts.extend([normalize(v) for v in item.values() if isinstance(v, str)])
+#                 elif isinstance(entry, str): # Unele secțiuni pot fi liste de string-uri direct
+#                     fallback_texts.append(normalize(entry))
+#
+#
+#     # Eliminăm duplicatele și textele goale din fallback final
+#     fallback_texts = sorted(list(set(filter(None, fallback_texts))))
+#     print(f"Fallback Texts (Diverse - Unique): {len(fallback_texts)} items")
+#     print("--- Sfârșit Extragere CV ---")
+#
+#     # Returnăm sursele în ordinea priorității dorite:
+#     # 1. Skill-uri Tehnice Directe
+#     # 2. Tehnologii Proiecte
+#     # 3. Tehnologii Work
+#     # 4. Tehnologii Certificări
+#     # 5. Descrieri Experiență (Proiecte + Work) <- NOU
+#     # 6. Texte Fallback (Educație, Altele, Nume Certificări, Titluri etc.)
+#     prioritized_sources = [
+#         tech_skills,
+#         project_techs,
+#         work_techs,
+#         cert_techs,
+#         experience_descriptions, # Lista nouă inserată aici
+#         fallback_texts
+#     ]
+#     # Verificăm că toate sunt liste de stringuri
+#     for i, source_list in enumerate(prioritized_sources):
+#         if not isinstance(source_list, list):
+#             print(f"Warning: Sursa {i} nu este o listă!")
+#         # Optional: Verifică tipul elementelor
+#         # if source_list and not all(isinstance(item, str) for item in source_list):
+#         #    print(f"Warning: Sursa {i} conține elemente non-string!")
+#
+#     return prioritized_sources
 
 # --- IMPORTANT ---
 # Trebuie să actualizezi și maparea numelor surselor în `is_text_match_priority`
@@ -537,7 +547,8 @@ def compute_cosine_similarity(text1, text2, model):
         print(f"Eroare la calculul cosine similarity între '{text1}' și '{text2}': {e}")
         return -1.0 # Indicăm eroare
 
-def is_text_match_priority(needle, sources, model, cache=None,
+# cv_prioritized_sources inainte era list[list[str]], acum e dict
+def is_text_match_priority(needle, cv_prioritized_sources, model, cache=None,
                            cosine_threshold=DEFAULT_COSINE_THRESHOLD,
                            difflib_threshold=DEFAULT_DIFFLIB_THRESHOLD):
     """
@@ -546,7 +557,7 @@ def is_text_match_priority(needle, sources, model, cache=None,
 
     Args:
         needle (str): Textul de căutat (din JD), normalizat.
-        sources (list[list[str]]): Lista de liste de texte din CV, în ordinea priorității.
+        cv_prioritized_sources (dict(str, list[str])): Lista de liste de texte din CV, în ordinea priorității.
         model: Modelul SentenceTransformer preîncărcat (poate fi None).
         cache (dict): Cache pentru rezultate (opțional).
         cosine_threshold (float): Pragul pentru similaritatea cosinus.
@@ -578,6 +589,9 @@ def is_text_match_priority(needle, sources, model, cache=None,
              print(f"  (Potrivire sinonim: '{needle}' conține cheia '{key}'. Căutăm {synonyms_to_check})")
              break # Am găsit o cheie, nu mai căutăm altele
 
+    # fac list(list(str))
+    sources = cv_prioritized_sources.values()
+
     if matched_synonym_key:
         for i, source in enumerate(sources):
             source_name = ["TechSkills", "ProjectTech", "WorkTech", "CertTech", "ExperienceDesc","FallbackTexts"][i]
@@ -590,15 +604,17 @@ def is_text_match_priority(needle, sources, model, cache=None,
 
     # 2. Verificare Cuvinte Cheie Tehnice directe (potrivire cuvânt întreg)
     # Extragem cuvintele cheie tehnice *din needle*
-    needle_keywords = [kw for kw in TECHNICAL_KEYWORDS if re.search(r'\b' + re.escape(kw) + r'\b', needle, re.IGNORECASE)]
+    terms_in_needle = split_terms(needle)
+    needle_keywords = [kw for kw in TECHNICAL_KEYWORDS if normalize(kw) in terms_in_needle]
     if needle_keywords:
         print(f"  (Cuvinte cheie tehnice în needle: {needle_keywords})")
         for i, source in enumerate(sources):
             source_name = ["TechSkills", "ProjectTech", "WorkTech", "CertTech", "ExperienceDesc","FallbackTexts"][i]
             for text in source:
+                terms_in_text = split_terms(text)
                 for keyword in needle_keywords:
                     # Căutăm cuvântul cheie exact (ca un cuvânt întreg) în textul sursă
-                    if re.search(r'\b' + re.escape(keyword) + r'\b', text, re.IGNORECASE):
+                    if normalize(keyword) in terms_in_text:
                         print(f"  ✅ Potrivire CUVÂNT CHEIE: '{keyword}' găsit în '{text}' (Sursa: {source_name}) pentru '{needle}'.")
                         cache[needle] = True
                         return True
@@ -612,13 +628,13 @@ def is_text_match_priority(needle, sources, model, cache=None,
             if not text: continue # Skip texte goale din surse
 
             # 3a. Similaritate Cosinus (dacă modelul e disponibil)
-            if model:
-                sim_score = compute_cosine_similarity(needle, text, model)
-                # print(f"    -> Cosine sim. cu '{text}': {sim_score:.3f} (prag: {cosine_threshold})") # Debug detaliat
-                if sim_score >= cosine_threshold:
-                    print(f"  ✅ Potrivire SEMANTICĂ (Cosine): Scorul {sim_score:.3f} >= {cosine_threshold} între '{needle}' și '{text}' (Sursa: {source_name}).")
-                    cache[needle] = True
-                    return True
+            # if model:
+            #     sim_score = compute_cosine_similarity(needle, text, model)
+            #     # print(f"    -> Cosine sim. cu '{text}': {sim_score:.3f} (prag: {cosine_threshold})") # Debug detaliat
+            #     if sim_score >= cosine_threshold:
+            #         print(f"  ✅ Potrivire SEMANTICĂ (Cosine): Scorul {sim_score:.3f} >= {cosine_threshold} între '{needle}' și '{text}' (Sursa: {source_name}).")
+            #         cache[needle] = True
+            #         return True
 
             # 3b. Similaritate Secvențială (Difflib)
             ratio = difflib.SequenceMatcher(None, needle, text).ratio()
@@ -641,7 +657,7 @@ def is_text_match_priority(needle, sources, model, cache=None,
     cache[needle] = False
     return False
 
-def evaluate_group_preferred(group_data, cv, model, cache, depth=0):
+def evaluate_group_preferred(group_data, cv_prioritized_sources, model, cache, depth=0):
     """Evaluează un grup de skill-uri preferate (AND/OR)."""
     group_type = group_data.get("group_type", "OR") # Implicit OR dacă nu e specificat
     # Gestionăm structura unde un item poate fi direct un skill sau un grup
@@ -656,7 +672,7 @@ def evaluate_group_preferred(group_data, cv, model, cache, depth=0):
 
     # Extragem sursele de text din CV o singură dată pentru acest grup
     # (Optimizare: Am putea face asta o singură dată per evaluare totală, dar așa e mai clar)
-    prioritized_sources = prioritized_flatten(cv) # Atenție: Afișează mesajele de extragere de fiecare dată
+    # prioritized_sources = prioritized_flatten(cv) # Atenție: Afișează mesajele de extragere de fiecare dată
 
     indent = "  " * depth
     print(f"{indent}Evaluare grup preferat (Tip: {group_type}, Nr. iteme: {len(group_items)}):")
@@ -671,7 +687,7 @@ def evaluate_group_preferred(group_data, cv, model, cache, depth=0):
             print(f"{indent}  Procesare item AND {i + 1}/{len(group_items)}")
             if "group" in item or "group_type" in item: # Verificăm dacă e un sub-grup
                 print(f"{indent}    -> Sub-grup detectat...")
-                nested_score = evaluate_group_preferred(item, cv, model, cache, depth + 1)
+                nested_score = evaluate_group_preferred(item, cv_prioritized_sources, model, cache, depth + 1)
                 print(f"{indent}    <- Scor sub-grup: {nested_score * 100:.2f}%")
                 results.append(nested_score)
             else:
@@ -686,7 +702,7 @@ def evaluate_group_preferred(group_data, cv, model, cache, depth=0):
                     # Alegerea depinde de logica de business dorită. Aici îl ignorăm.
                     continue # Trecem la următorul item
 
-                matched = is_text_match_priority(text_to_match, prioritized_sources, model, cache)
+                matched = is_text_match_priority(text_to_match, cv_prioritized_sources, model, cache)
                 print(f"{indent}    Verificare item: '{text_to_match}' -> {'✅ Potrivit' if matched else '❌ Nepotrivit'}")
                 results.append(1.0 if matched else 0.0)
 
@@ -703,7 +719,7 @@ def evaluate_group_preferred(group_data, cv, model, cache, depth=0):
             print(f"{indent}  Procesare item OR {i + 1}/{len(group_items)}")
             if "group" in item or "group_type" in item: # Verificăm dacă e un sub-grup
                 print(f"{indent}    -> Sub-grup detectat...")
-                nested_score = evaluate_group_preferred(item, cv, model, cache, depth + 1)
+                nested_score = evaluate_group_preferred(item, cv_prioritized_sources, model, cache, depth + 1)
                 print(f"{indent}    <- Scor sub-grup: {nested_score * 100:.2f}%")
                 if nested_score > 0: # O potrivire în sub-grupul OR este suficientă
                     print(f"{indent}Scor final grup OR: 100.00% (potrivire în sub-grup)")
@@ -715,7 +731,7 @@ def evaluate_group_preferred(group_data, cv, model, cache, depth=0):
                     print(f"{indent}    Item gol/invalid, sărim peste: {item}")
                     continue # Trecem la următorul item
 
-                matched = is_text_match_priority(text_to_match, prioritized_sources, model, cache)
+                matched = is_text_match_priority(text_to_match, cv_prioritized_sources, model, cache)
                 print(f"{indent}    Verificare item: '{text_to_match}' -> {'✅ Potrivit' if matched else '❌ Nepotrivit'}")
                 if matched:
                     print(f"{indent}Scor final grup OR: 100.00% (potrivire item individual)")
@@ -734,7 +750,7 @@ def evaluate_group_preferred(group_data, cv, model, cache, depth=0):
 
 
 # -------------------------------- MAIN FUNCTION ---------------------------------
-def score_only_preferred_skills(model, jd_preferred_skills_list, cv):
+def score_only_preferred_skills(model, jd_preferred_skills_list, cv_prioritized_sources):
     """Calculează scorul total pentru skill-urile preferate."""
     if not jd_preferred_skills_list:
         print("Lista de skill-uri preferate este goală.")
@@ -749,7 +765,7 @@ def score_only_preferred_skills(model, jd_preferred_skills_list, cv):
         print(f"\n--- Evaluare Grup Principal {i+1} ---")
         # Verificăm dacă 'group_data' este un dicționar (format așteptat)
         if isinstance(group_data, dict):
-             score = evaluate_group_preferred(group_data, cv, model, match_cache)
+             score = evaluate_group_preferred(group_data, cv_prioritized_sources, model, match_cache)
              scores.append(score)
              print(f"--- Scor Grup Principal {i+1}: {score * 100:.2f}% ---")
         else:
@@ -766,3 +782,6 @@ def score_only_preferred_skills(model, jd_preferred_skills_list, cv):
         print(f"Grup {i+1}: {score * 100:.2f}%")
     print("===================================")
     return total_score
+
+
+
