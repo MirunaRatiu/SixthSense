@@ -30,6 +30,7 @@ public class CvMapper {
                 .name(cv.getName())
                 .id(cv.getId())
                 .skills(splitString(cv.getTechnicalSkills())) // this will be changed
+                .languages(splitStringLanguage(cv.getForeignLanguages()))
                 .accessLink(cv.getPathName())
                 .build();
     }
@@ -49,5 +50,22 @@ public class CvMapper {
             skills.add(skillMap.get("skill"));
         }
         return skills;
+    }
+
+    private static List<String> splitStringLanguage(String jsonString){
+        String json = jsonString
+                .replace("=", ":")
+                .replaceAll("([a-zA-Z ]+):", "\"$1\":")
+                .replaceAll(":([^\",}\\]]+)", ":\"$1\"");
+        Gson gson = new Gson();
+        Type listType = new TypeToken<List<Map<String, String>>>() {}.getType();
+        List<Map<String, String>> skillList = gson.fromJson(json, listType);
+
+        // Extract skill values
+        List<String> languages = new ArrayList<>();
+        for (Map<String, String> languageMap : skillList) {
+            languages.add(languageMap.get("language"));
+        }
+        return languages;
     }
 }
