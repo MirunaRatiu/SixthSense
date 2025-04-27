@@ -90,5 +90,7 @@ public class JobDescription {
         this.message = message;
     }
 
-
+    public String getFileName() {
+        return fileName;
+    }
 }
