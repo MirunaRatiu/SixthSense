@@ -9,7 +9,9 @@ import com.cv_jd_matching.HR.entity.Cv;
 import com.cv_jd_matching.HR.entity.JobDescription;
 import com.cv_jd_matching.HR.error.InvalidFileFormatException;
 import com.cv_jd_matching.HR.parser.FileTextExtractor;
+import jakarta.transaction.Transactional;
 import org.apache.tika.Tika;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -26,12 +28,15 @@ import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.cv_jd_matching.HR.parser.FileTextExtractor;
+
 import org.springframework.web.multipart.MultipartFile;
+
 
 
 @Service
@@ -59,62 +64,123 @@ public class BlobServiceClient {
 
     }
 
+
+    @Transactional
     public String uploadCv(MultipartFile file) throws IOException, InvalidFileFormatException {
         BlobContainerClient containerClient = getContainerClient(containerName1);
         byte[] fileBytes = file.getBytes();
         String originalFilename = file.getOriginalFilename();
-        if (originalFilename == null) {
+
+        if (originalFilename == null || originalFilename.trim().isEmpty()) {
             throw new IllegalArgumentException("File name is missing.");
         }
-        String extension = originalFilename.contains(".") ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
+
         String content = FileTextExtractor.extractTextFromFile(new ByteArrayInputStream(fileBytes), originalFilename);
         Map<String, Object> cvData = CvParser.parseCv(content);
-
         String extractedName = (String) cvData.get("name");
-        System.out.println("extractedName"+extractedName);
+
         if (extractedName == null || extractedName.trim().isEmpty()) {
             throw new InvalidFileFormatException("Could not extract name from the CV.");
         }
 
-        int currentCvsNumber = cvRepository.countAll() + 1;
-        String correctFileName = "cv_" + currentCvsNumber + "_" + extractedName.replaceAll("[ -]", "_") + extension;
-        System.out.println("Correct File Name: " + correctFileName);
-        System.out.println("Extracted Name: " + extractedName);
+        String normalizedName = extractedName.trim().replaceAll("[\\s-]+", "_");
 
-        BlobClient blobClient = containerClient.getBlobClient(correctFileName);
+        Optional<Cv> existingCvOptional = cvRepository.findFirstByFileNameContaining(normalizedName);
+
+        Cv cvToSave;
+        String finalFileName;
+        boolean isUpdate = false;
+        String oldBlobNameToDelete = null;
+
+        if (existingCvOptional.isPresent()) {
+            isUpdate = true;
+            Cv existingCv = existingCvOptional.get();
+            cvToSave = existingCv;
+            finalFileName = existingCv.getFileName();
+            oldBlobNameToDelete = finalFileName;
+
+        } else {
+            isUpdate = false;
+
+            long nextCvNumber = 1;
+            Optional<Cv> lastCvOptional = cvRepository.findTopByOrderByFileNameDesc();
+            if (lastCvOptional.isPresent()) {
+                String lastFileName = lastCvOptional.get().getFileName();
+                String[] parts = lastFileName.split("_");
+                if (parts.length > 1) {
+                    try {
+                        long lastNumber = Long.parseLong(parts[1]);
+                        nextCvNumber = lastNumber + 1;
+                    } catch (NumberFormatException e) {
+                        System.err.println("Could not parse number from last CV filename: " + lastFileName);
+                    }
+                }
+            }
+            String extension = originalFilename.contains(".") ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
+            finalFileName = "cv_" + nextCvNumber + "_" + normalizedName + extension;
+
+            cvToSave = new Cv();
+            cvToSave.setFileName(finalFileName);
+        }
+
+        BlobClient blobClient = containerClient.getBlobClient(finalFileName);
         InputStream newFileStream = new ByteArrayInputStream(fileBytes);
-        blobClient.upload(newFileStream, fileBytes.length, true);
+        try {
+            blobClient.upload(newFileStream, fileBytes.length, true);
 
-        OffsetDateTime expiryTime = OffsetDateTime.now().plusHours(1);
+            if (isUpdate && oldBlobNameToDelete != null && !oldBlobNameToDelete.equals(finalFileName)) {
+                BlobClient oldBlobClient = containerClient.getBlobClient(oldBlobNameToDelete);
+                oldBlobClient.deleteIfExists();
+            }
+
+        } catch (Exception e) {
+            throw new IOException("Failed to upload CV file to storage for " + finalFileName, e);
+        }
+
+        OffsetDateTime expiryTime = OffsetDateTime.now().plusDays(30);
         BlobSasPermission permissions = new BlobSasPermission().setReadPermission(true);
         BlobServiceSasSignatureValues sasValues = new BlobServiceSasSignatureValues(expiryTime, permissions);
         String sasToken = blobClient.generateSas(sasValues);
         String urlWithSas = blobClient.getBlobUrl() + "?" + sasToken;
 
+        cvToSave.setName(extractedName);
         try {
-            Cv cv = new Cv();
-            cv.setName(extractedName);
-            cv.setTechnicalSkills((List<String>) cvData.get("technical_skills"));
-            cv.setForeignLanguages((List<String>) cvData.get("foreign_languages"));
-            cv.setEducation((List<String>) cvData.get("education"));
-            cv.setCertifications((List<String>) cvData.get("certifications"));
-            cv.setProjectExperience((List<String>) cvData.get("project_experience"));
-            cv.setOthers((List<String>) cvData.get("others"));
-            cv.setWorkExperience((List<String>) cvData.get("work_experience"));
-            cv.setFileName(correctFileName);
-            cv.setPathName(urlWithSas);
+            cvToSave.setTechnicalSkills(objectToStringRepresentation(cvData.get("technical_skills")));
+            cvToSave.setForeignLanguages(objectToStringRepresentation(cvData.get("foreign_languages")));
+            cvToSave.setEducation(objectToStringRepresentation(cvData.get("education")));
+            cvToSave.setCertifications(objectToStringRepresentation(cvData.get("certifications")));
+            cvToSave.setProjectExperience(objectToStringRepresentation(cvData.get("project_experience")));
+            cvToSave.setOthers(objectToStringRepresentation(cvData.get("others")));
+            cvToSave.setWorkExperience(objectToStringRepresentation(cvData.get("work_experience")));
+        } catch (ClassCastException e) {
+            throw new InvalidFileFormatException("Internal error processing parsed CV data types: " + e.getMessage());
 
-            cvRepository.save(cv);
+        }
+        cvToSave.setPathName(urlWithSas);
 
+        try {
+            Cv savedCv = cvRepository.save(cvToSave);
             return urlWithSas;
         } catch (Exception e) {
-            blobClient.delete();
-            throw e;
+            throw new RuntimeException("Failed to save CV record to database for file " + finalFileName, e);
         }
     }
 
 
+    private String objectToStringRepresentation(Object data) {
+        if (data == null) {
+            return null;
+        }
+        if (data instanceof List) {
+            List<?> list = (List<?>) data;
+            if (list.isEmpty()) {
+                return "";
+            }
 
+            return list.toString();
+        }
+        return data.toString();
+    }
 
     public static String extractCoreJobTitle(String jobTitle) {
         if (jobTitle == null || jobTitle.trim().isEmpty()) {
@@ -219,6 +285,37 @@ public class BlobServiceClient {
         } catch (Exception e) {
             blobClient.delete();
             throw e;
+        }
+    }
+
+    public boolean deleteCvBlob(String fileName) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            // Cannot delete if file name is invalid
+            return false;
+        }
+
+        try {
+            BlobContainerClient containerClient = getContainerClient(containerName1);
+            BlobClient blobClient = containerClient.getBlobClient(fileName);
+
+            // Optional: Check if the blob exists before attempting deletion
+            // This prevents an exception if the blob is already gone
+            if (!blobClient.exists()) {
+                System.out.println("Blob not found: " + fileName);
+                return false; // Indicate that the blob was not found
+            }
+
+            // Delete the blob
+            blobClient.delete();
+
+            System.out.println("Blob deleted successfully: " + fileName);
+            return true; // Indicate successful deletion
+
+        } catch (Exception e) {
+            // Log or handle the exception (e.g., permissions issues, network problems)
+            System.err.println("Failed to delete blob: " + fileName);
+            e.printStackTrace(); // Or use a logger
+            return false; // Indicate that deletion failed
         }
     }
 
