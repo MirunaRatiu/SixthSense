@@ -457,6 +457,137 @@
   font-size: 0.875rem;
 }
 
+/* Add these styles to your existing CSS */
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  background-color: #fff5f5;
+  border: 1px solid #ffcccc;
+  border-radius: var(--border-radius);
+  margin-bottom: var(--spacing-6);
+}
+
+.error-container i {
+  font-size: 2rem;
+  color: var(--danger);
+  margin-bottom: 1rem;
+}
+
+.error-container p {
+  color: var(--danger);
+  margin-bottom: 1rem;
+}
+
+.empty-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  background-color: white;
+  border-radius: var(--border-radius-lg);
+  margin-bottom: var(--spacing-6);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  color: var(--gray-400);
+  margin-bottom: 1rem;
+}
+
+.empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.empty-message {
+  color: var(--text-secondary);
+  max-width: 400px;
+}
+
+.job-description-section h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.job-description-section ul {
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.job-description-section li {
+  margin-bottom: 0.25rem;
+}
+
+/* New styles added here */
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: var(--spacing-5);
+  margin-bottom: var(--spacing-3);
+  color: var(--text-primary);
+}
+
+.requirements-list {
+  padding-left: var(--spacing-5);
+  margin-bottom: var(--spacing-4);
+}
+
+.requirements-list li {
+  margin-bottom: var(--spacing-2);
+  position: relative;
+}
+
+.requirements-list li::before {
+  content: "";
+  position: absolute;
+  left: -18px;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--primary);
+}
+
+.job-description-section p {
+  margin-bottom: var(--spacing-3);
+  line-height: 1.6;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   .jobs-page {

@@ -1,103 +1,185 @@
-<div class="page-header">
-  <h1>CV-Job Matcher</h1>
-  <p>Upload a CV to find the best matching job</p>
-</div>
-
-<div class="grid">
-  <div class="col-12 md:col-5">
-    <p-card header="Upload CV">
-      <form [formGroup]="cvForm">
-        <div class="field mb-3">
-          <label for="name" class="block mb-2">Candidate Name</label>
-          <input id="name" type="text" pInputText formControlName="name" class="w-full" />
-          <small *ngIf="cvForm.get('name')?.invalid && cvForm.get('name')?.touched" class="p-error">
-            Name is required
-          </small>
-        </div>
-
-        <div class="field mb-3">
-          <label class="block mb-2">CV Upload</label>
-          <p-fileUpload 
-            mode="basic" 
-            chooseLabel="Browse" 
-            [auto]="true"
-            accept=".pdf,.doc,.docx"
-            [maxFileSize]="1000000"
-            (uploadHandler)="onUpload($event)"
-            [customUpload]="true"
-            class="w-full">
-          </p-fileUpload>
-          <small *ngIf="!cvUploaded && submitted" class="p-error">
-            Please upload a CV
-          </small>
-        </div>
-
-        <div class="field mb-3">
-          <label for="skills" class="block mb-2">Skills (comma separated)</label>
-          <input id="skills" type="text" pInputText formControlName="skills" class="w-full" />
-        </div>
-
-        <div class="field mb-3">
-          <label for="experience" class="block mb-2">Experience (years)</label>
-          <input id="experience" type="number" pInputText formControlName="experience" class="w-full" />
-        </div>
-
-        <button pButton type="button" label="Find Matching Jobs" [disabled]="cvForm.invalid || !cvUploaded" class="w-full" (click)="findMatches()"></button>
-      </form>
-    </p-card>
+<div class="cv-matcher-page animate-fadeIn" *ngIf="selectedCandidate">
+  <!-- Header with title and back button -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>CV Matcher: {{ selectedCandidate.name }}</h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-outline" (click)="goBack()">
+        <i class="pi pi-arrow-left"></i> Back to Candidates
+      </button>
+    </div>
   </div>
 
-  <div class="col-12 md:col-7">
-    <p-card header="Best Matching Jobs" *ngIf="matchingJobs.length > 0">
-      <p-table [value]="matchingJobs" [tableStyle]="{'min-width': '50rem'}">
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Position</th>
-            <th>Company</th>
-            <th>Required Skills</th>
-            <th>Match Score</th>
-            <th>Actions</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-job>
-          <tr>
-            <td>{{ job.positionName }}</td>
-            <td>
-              <div class="flex align-items-center">
-                <img [src]="job.clientLogo || '/placeholder.svg'" width="24" height="24" class="mr-2" />
-                <span>{{ job.client }}</span>
-              </div>
-            </td>
-            <td>
-              <span *ngFor="let skill of job.requiredSkills.slice(0, 3)" class="skill-tag">{{ skill }}</span>
-              <span *ngIf="job.requiredSkills.length > 3">+{{ job.requiredSkills.length - 3 }} more</span>
-            </td>
-            <td>
-              <div class="flex align-items-center">
-                <p-progressBar [value]="job.matchScore" [showValue]="false" [style]="{'height': '8px', 'width': '100px'}" class="mr-2"></p-progressBar>
-                <span>{{ job.matchScore }}%</span>
-              </div>
-            </td>
-            <td>
-              <button pButton icon="pi pi-eye" class="p-button-rounded p-button-text" pTooltip="View Job"></button>
-              <button pButton icon="pi pi-send" class="p-button-rounded p-button-text" pTooltip="Apply"></button>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="5" class="text-center">No matching jobs found</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </p-card>
-
-    <p-card *ngIf="matchingJobs.length === 0 && submitted" header="No Matches Found">
-      <div class="flex flex-column align-items-center justify-content-center p-5">
-        <i class="pi pi-search" style="font-size: 3rem; color: var(--text-color-secondary);"></i>
-        <h3>No matching jobs found</h3>
-        <p>Try uploading a different CV or adjusting your skills</p>
+  <!-- Candidate Details Card -->
+  <div class="card candidate-details-card">
+    <div class="candidate-details-header">
+      <h2>Candidate Details</h2>
+    </div>
+    <div class="candidate-details-content">
+      <div class="candidate-info-section">
+        <div class="candidate-info-row">
+          <div class="candidate-info-label">Name:</div>
+          <div class="candidate-info-value">{{ selectedCandidate.name }}</div>
+        </div>
+        <div class="candidate-info-row" *ngIf="selectedCandidate.education">
+          <div class="candidate-info-label">Education:</div>
+          <div class="candidate-info-value">{{ selectedCandidate.education }}</div>
+        </div>
       </div>
-    </p-card>
+      
+      <div class="candidate-description-section">
+        <h3>Skills</h3>
+        <div class="candidate-skills-list">
+          <span *ngFor="let skill of selectedCandidate.skills" class="skill-tag">{{ skill }}</span>
+        </div>
+        
+        <div *ngIf="selectedCandidate.foreign_languages && selectedCandidate.foreign_languages.length > 0">
+          <h4>Languages</h4>
+          <div class="candidate-skills-list">
+            <span *ngFor="let lang of selectedCandidate.foreign_languages" class="skill-tag">{{ lang }}</span>
+          </div>
+        </div>
+        
+        <div *ngIf="selectedCandidate.certifications && selectedCandidate.certifications.length > 0">
+          <h4>Certifications</h4>
+          <ul>
+            <li *ngFor="let cert of selectedCandidate.certifications">{{ cert }}</li>
+          </ul>
+        </div>
+        
+        <div *ngIf="selectedCandidate.work_experience && selectedCandidate.work_experience.length > 0">
+          <h4>Work Experience</h4>
+          <ul>
+            <li *ngFor="let exp of selectedCandidate.work_experience">{{ exp }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Find Matches Button -->
+  <div class="card actions-card">
+    <div class="actions-content">
+      <button class="btn btn-primary" (click)="findMatches()" [disabled]="loadingJobs">
+        <i class="pi" [ngClass]="loadingJobs ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
+        {{ loadingJobs ? 'Finding Matches...' : 'Find Matching Jobs' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-container">
+    <i class="pi pi-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" (click)="findMatches()">Try Again</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loadingJobs && !error" class="loading-container">
+    <div class="spinner"></div>
+    <p>Finding matching jobs...</p>
+  </div>
+
+  <!-- Matching Jobs Table -->
+  <div class="table-container card" *ngIf="!loadingJobs && !error && matchingJobs.length > 0">
+    <table class="jobs-table">
+      <thead>
+        <tr>
+          <th class="sortable-col">
+            Position
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Company
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Required Skills
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Match Score
+            <i class="pi pi-sort"></i>
+          </th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let job of matchingJobs">
+          <td>{{ job['jobTitle'] }}</td>
+          <td>
+            <div *ngIf="job['companyOverview']">
+              {{ job['companyOverview'][0] || job['companyOverview'] }}
+            </div>
+          </td>
+          <td>
+            <div class="job-skills">
+              <ng-container *ngIf="job['requiredQualifications'] && job['requiredQualifications'].length">
+                <span *ngFor="let skill of job['requiredQualifications'].slice(0, 3)" class="skill-tag">{{ skill }}</span>
+                <span *ngIf="job['requiredQualifications'].length > 3" class="skill-tag">
+                  +{{ job['requiredQualifications'].length - 3 }}
+                </span>
+              </ng-container>
+              <span *ngIf="!job['requiredQualifications'] || !job['requiredQualifications'].length">No qualifications listed</span>
+            </div>
+          </td>
+          <td>
+            <div class="match-score-container">
+              <div class="match-score-bar" [style.width.%]="job['matchScore']"></div>
+              <span class="match-score-value" [ngClass]="getMatchScoreClass(job['matchScore'])">{{ job['matchScore'] }}%</span>
+            </div>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline">
+              <i class="pi pi-eye"></i> View
+            </button>
+            <button class="btn btn-sm btn-primary">
+              <i class="pi pi-send"></i> Apply
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- No Results State -->
+  <div *ngIf="!loadingJobs && !error && matchingJobs.length === 0" class="empty-results card">
+    <i class="pi pi-search empty-icon"></i>
+    <h3 class="empty-title">No matching jobs found</h3>
+    <p class="empty-message">Try updating your skills or experience to find better matches</p>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="!loadingJobs && !error && matchingJobs.length > 0">
+    <div class="pagination-info">
+      <span>Results per page:</span>
+      <select [(ngModel)]="rows" (change)="onRowsChange()">
+        <option [value]="10">10</option>
+        <option [value]="20">20</option>
+        <option [value]="50">50</option>
+      </select>
+      <span>1-{{ matchingJobs.length > rows ? rows : matchingJobs.length }} of {{ totalRecords }}</span>
+    </div>
+    <div class="pagination-controls">
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-double-left"></i>
+      </button>
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-left"></i>
+      </button>
+      <button class="pagination-btn active">1</button>
+      <button class="pagination-btn">2</button>
+      <button class="pagination-btn">3</button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-right"></i>
+      </button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-double-right"></i>
+      </button>
+    </div>
+    <div class="total-records">
+      {{ totalRecords }} total jobs
+    </div>
   </div>
 </div>

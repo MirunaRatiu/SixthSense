@@ -1,11 +1,11 @@
-<div class="jobs-page animate-fadeIn">
+<div class="candidates-page animate-fadeIn">
   <!-- Header with title and notification badge -->
   <div class="page-header">
     <div class="title-section">
-      <h1>Jobs <span class="notification-badge" data-count="1"></span></h1>
+      <h1>Candidates <span class="notification-badge" data-count="1"></span></h1>
     </div>
     <div class="header-actions">
-      <button class="btn btn-danger" [disabled]="!hasSelectedJobs()" (click)="deleteSelectedJobs()">
+      <button class="btn btn-danger" [disabled]="!hasSelectedCandidates()" (click)="deleteSelectedCandidates()">
         <i class="pi pi-trash"></i> Delete Selected
       </button>
     </div>
@@ -19,8 +19,8 @@
        (drop)="onDrop($event)">
     <div class="upload-content">
       <i class="pi pi-cloud-upload upload-icon"></i>
-      <h3 class="upload-title">Upload Job Description Files</h3>
-      <p class="upload-hint">Drag & drop your job description files here or click to browse</p>
+      <h3 class="upload-title">Upload CV Files</h3>
+      <p class="upload-hint">Drag & drop your CV files here or click to browse</p>
       <input type="file" 
              #fileInput 
              multiple 
@@ -53,7 +53,7 @@
     <div class="upload-actions">
       <button class="btn btn-success" [disabled]="isUploading" (click)="processFiles()">
         <i class="pi" [ngClass]="isUploading ? 'pi-spinner pi-spin' : 'pi-check'"></i> 
-        {{ isUploading ? 'Uploading...' : 'Upload Job Descriptions' }}
+        {{ isUploading ? 'Uploading...' : 'Upload CVs' }}
       </button>
       <button class="btn btn-outline" [disabled]="isUploading" (click)="clearFiles()">
         <i class="pi pi-trash"></i> Clear All
@@ -90,60 +90,93 @@
   <!-- Loading State -->
   <div *ngIf="loading" class="loading-container">
     <div class="spinner"></div>
-    <p>Loading jobs...</p>
+    <p>Loading candidates...</p>
   </div>
 
   <!-- Error State -->
   <div *ngIf="error" class="error-container">
     <i class="pi pi-exclamation-triangle"></i>
     <p>{{ error }}</p>
-    <button class="btn btn-primary" (click)="loadJobs()">Try Again</button>
+    <button class="btn btn-primary" (click)="loadCandidates()">Try Again</button>
   </div>
 
-  <!-- Jobs table -->
+  <!-- Candidates table -->
   <div class="table-container card" *ngIf="!loading && !error">
-    <table class="jobs-table">
+    <table class="candidates-table">
       <thead>
         <tr>
           <th class="checkbox-col">
             <div class="custom-checkbox" [class.checked]="allSelected" (click)="toggleSelectAll()"></div>
           </th>
           <th class="sortable-col">
-            Position Name
+            Name
             <i class="pi pi-sort"></i>
           </th>
           <th class="sortable-col">
-            Job Department
+            Skills
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Education
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Languages
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Experience
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Certifications
             <i class="pi pi-sort"></i>
           </th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let job of jobs; let i = index" (click)="viewJobMatches(job)" class="clickable-row">
+        <tr *ngFor="let candidate of candidates; let i = index" (click)="viewCandidateDetails(candidate)" class="clickable-row">
           <td class="checkbox-col" (click)="$event.stopPropagation()">
             <div class="custom-checkbox" 
-                 [class.checked]="job.selected" 
-                 (click)="toggleJobSelection(i)"></div>
+                 [class.checked]="candidate.selected" 
+                 (click)="toggleCandidateSelection(i)"></div>
           </td>
-          <td class="position-col">
-            <div class="position-info">
-              <div class="status-dot" [ngClass]="getStatusDotClass(job)"></div>
-              <span>{{ job.jobTitle }}</span>
+          <td class="name-col">
+            <div class="candidate-info">
+              <div class="candidate-name">{{ candidate.name }}</div>
             </div>
           </td>
-          <td class="department-col">
-            <div class="department-badge">
-              <div class="department-icon" [ngClass]="getDepartmentClass(job)">
-                <i class="pi" [ngClass]="getDepartmentIcon(job)"></i>
-              </div>
-              <span>{{ getDepartment(job) }}</span>
-            </div>
-
-   
           <td>
-            <button class="btn btn-primary btn-sm" (click)="$event.stopPropagation(); viewJobMatches(job)">
-              <i class="pi pi-users"></i> Find Matches
+            <div class="candidate-skills">
+              <span *ngFor="let skill of candidate.skills?.slice(0, 3)" class="skill-tag">{{ skill }}</span>
+              <span *ngIf="candidate.skills && candidate.skills.length > 3" class="skill-tag">+{{ candidate.skills.length - 3 }}</span>
+            </div>
+          </td>
+          <td>{{ candidate.education }}</td>
+          <td>
+            <div class="candidate-skills">
+              <span *ngFor="let lang of candidate.foreign_languages?.slice(0, 2)" class="skill-tag">{{ lang }}</span>
+              <span *ngIf="candidate.foreign_languages && candidate.foreign_languages.length > 2" class="skill-tag">+{{ candidate.foreign_languages.length - 2 }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="getExperienceLevelClass(getExperienceLevel(candidate))">
+              {{ getExperienceLevel(candidate) }}
+            </span>
+          </td>
+          <td>
+            <div class="candidate-skills">
+              <span *ngFor="let cert of candidate.certifications?.slice(0, 2)" class="skill-tag">{{ cert }}</span>
+              <span *ngIf="candidate.certifications && candidate.certifications.length > 2" class="skill-tag">+{{ candidate.certifications.length - 2 }}</span>
+            </div>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline" (click)="$event.stopPropagation(); viewCandidateDetails(candidate)">
+              <i class="pi pi-eye"></i> View
+            </button>
+            <button class="btn btn-sm btn-primary" (click)="$event.stopPropagation(); viewCandidateMatches(candidate)">
+              <i class="pi pi-search"></i> Find Jobs
             </button>
           </td>
         </tr>
@@ -160,7 +193,7 @@
         <option [value]="20">20</option>
         <option [value]="50">50</option>
       </select>
-      <span>1-{{ jobs.length > rows ? rows : jobs.length }} of {{ totalRecords }}</span>
+      <span>1-{{ candidates.length > rows ? rows : candidates.length }} of {{ totalRecords }}</span>
     </div>
     <div class="pagination-controls">
       <button class="pagination-btn" disabled>
@@ -180,7 +213,7 @@
       </button>
     </div>
     <div class="total-records">
-      {{ totalRecords }} total jobs
+      {{ totalRecords }} total candidates
     </div>
   </div>
 </div>

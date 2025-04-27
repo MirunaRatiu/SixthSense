@@ -2,7 +2,7 @@
   <!-- Header with title and back button -->
   <div class="page-header">
     <div class="title-section">
-      <h1>Job Matcher: {{ selectedJob.positionName }}</h1>
+      <h1>Job Matcher: {{ selectedJob.jobTitle }}</h1>
     </div>
     <div class="header-actions">
       <button class="btn btn-outline" (click)="goBack()">
@@ -20,35 +20,55 @@
       <div class="job-info-section">
         <div class="job-info-row">
           <div class="job-info-label">Position:</div>
-          <div class="job-info-value">{{ selectedJob.positionName }}</div>
+          <div class="job-info-value">{{ selectedJob.jobTitle }}</div>
         </div>
-        <div class="job-info-row">
-          <div class="job-info-label">Client:</div>
-          <div class="job-info-value">{{ selectedJob.client }}</div>
+        <div class="job-info-row" *ngIf="selectedJob.createdAt">
+          <div class="job-info-label">Created:</div>
+          <div class="job-info-value">{{ selectedJob.createdAt | date:'medium' }}</div>
         </div>
-        <div class="job-info-row">
-          <div class="job-info-label">Location:</div>
-          <div class="job-info-value">{{ selectedJob.location }}</div>
+      </div>
+
+      <div class="job-description-section">
+        <h3>Company Overview</h3>
+        <div *ngIf="selectedJob.companyOverview && selectedJob.companyOverview.length > 0">
+          <p *ngFor="let overview of selectedJob.companyOverview">{{ overview }}</p>
         </div>
-        <div class="job-info-row">
-          <div class="job-info-label">Headcount:</div>
-          <div class="job-info-value">{{ selectedJob.headcount }}</div>
+        <div *ngIf="selectedJob.companyOverview">
+          <p>{{ selectedJob.companyOverview }}</p>
         </div>
-        <div class="job-info-row">
-          <div class="job-info-label">Stage:</div>
-          <div class="job-info-value">
-            <span class="badge" [ngClass]="{'badge-success': selectedJob.stage}">{{ selectedJob.stage || 'OPEN' }}</span>
-          </div>
+        
+        <h3 class="section-title">Job Requirements</h3>
+        <div *ngIf="selectedJob.requiredQualifications && selectedJob.requiredQualifications.length > 0">
+          <ul class="requirements-list">
+            <li *ngFor="let req of selectedJob.requiredQualifications">{{ req }}</li>
+          </ul>
         </div>
-        <div class="job-info-row" *ngIf="selectedJob.salary">
-          <div class="job-info-label">Salary:</div>
-          <div class="job-info-value">{{ selectedJob.salary }}</div>
+        <div *ngIf="selectedJob.requiredQualifications && selectedJob.requiredQualifications.length > 0">
+          <ul class="requirements-list">
+            <li *ngFor="let req of selectedJob.requiredQualifications">{{ req }}</li>
+          </ul>
+        </div>
+        <div *ngIf="typeof selectedJob.requiredQualifications === 'string'">
+          <p>{{ selectedJob.requiredQualifications }}</p>
         </div>
       </div>
       
       <div class="job-description-section">
-        <h3>Job Description</h3>
-        <p>{{ selectedJob.description }}</p>
+        <p>{{ selectedJob.message }}</p>
+        
+        <div *ngIf="selectedJob.keyResponsabilities && selectedJob.keyResponsabilities.length > 0">
+          <h4>Key Responsibilities</h4>
+          <ul>
+            <li *ngFor="let resp of selectedJob.keyResponsabilities">{{ resp }}</li>
+          </ul>
+        </div>
+        
+        <div *ngIf="selectedJob.benefits && selectedJob.benefits.length > 0">
+          <h4>Benefits</h4>
+          <ul>
+            <li *ngFor="let benefit of selectedJob.benefits">{{ benefit }}</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -56,7 +76,7 @@
   <!-- Skills Management Card -->
   <div class="card skills-card">
     <div class="skills-header">
-      <h2>Required Skills</h2>
+      <h2>Preferred Skills</h2>
       <div class="skills-actions">
         <div class="add-skill-form">
           <input type="text" [(ngModel)]="newSkill" placeholder="Add new skill" class="skill-input" (keyup.enter)="addSkill()">
@@ -87,16 +107,29 @@
       </div>
       
       <div class="skills-footer">
-        <button class="btn btn-primary" (click)="findMatches()" [disabled]="loading">
-          <i class="pi" [ngClass]="loading ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
-          {{ loading ? 'Finding Matches...' : 'Refresh Matches' }}
+        <button class="btn btn-primary" (click)="applyWeights()" [disabled]="loadingCandidates">
+          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
+          {{ loadingCandidates ? 'Finding Matches...' : 'Apply Weights & Find Matches' }}
         </button>
       </div>
     </div>
   </div>
 
+  <!-- Error State -->
+  <div *ngIf="error" class="error-container">
+    <i class="pi pi-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" (click)="findMatches()">Try Again</button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loadingCandidates && !error" class="loading-container">
+    <div class="spinner"></div>
+    <p>Finding matching candidates...</p>
+  </div>
+
   <!-- Matching Candidates Table -->
-  <div class="table-container card">
+  <div class="table-container card" *ngIf="!loadingCandidates && !error && matchingCandidates.length > 0">
     <table class="jobs-table">
       <thead>
         <tr>
@@ -105,7 +138,7 @@
             <i class="pi pi-sort"></i>
           </th>
           <th class="sortable-col">
-            Experience
+            Skills
             <i class="pi pi-sort"></i>
           </th>
           <th class="sortable-col">
@@ -113,7 +146,7 @@
             <i class="pi pi-sort"></i>
           </th>
           <th class="sortable-col">
-            Skills
+            Languages
             <i class="pi pi-sort"></i>
           </th>
           <th class="sortable-col">
@@ -126,12 +159,17 @@
       <tbody>
         <tr *ngFor="let candidate of matchingCandidates">
           <td>{{ candidate.name }}</td>
-          <td>{{ candidate.experience }} years</td>
-          <td>{{ candidate.education }}</td>
           <td>
             <div class="candidate-skills">
               <span *ngFor="let skill of candidate.skills.slice(0, 3)" class="skill-tag">{{ skill }}</span>
               <span *ngIf="candidate.skills.length > 3" class="skill-tag">+{{ candidate.skills.length - 3 }}</span>
+            </div>
+          </td>
+          <td>{{ candidate.education }}</td>
+          <td>
+            <div class="candidate-skills">
+              <span *ngFor="let lang of candidate.foreign_languages.slice(0, 2)" class="skill-tag">{{ lang }}</span>
+              <span *ngIf="candidate.foreign_languages.length > 2" class="skill-tag">+{{ candidate.foreign_languages.length - 2 }}</span>
             </div>
           </td>
           <td>
@@ -157,8 +195,15 @@
     </table>
   </div>
 
+  <!-- No Results State -->
+  <div *ngIf="!loadingCandidates && !error && matchingCandidates.length === 0" class="empty-results card">
+    <i class="pi pi-search empty-icon"></i>
+    <h3 class="empty-title">No matching candidates found</h3>
+    <p class="empty-message">Try adjusting the skill weights or adding more skills to find better matches</p>
+  </div>
+
   <!-- Pagination -->
-  <div class="pagination-container">
+  <div class="pagination-container" *ngIf="!loadingCandidates && !error && matchingCandidates.length > 0">
     <div class="pagination-info">
       <span>Results per page:</span>
       <select [(ngModel)]="rows" (change)="onRowsChange()">

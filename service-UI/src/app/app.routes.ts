@@ -10,6 +10,10 @@ export const routes: Routes = [
     loadComponent: () => import("./pages/jobs/jobs.component").then((m) => m.JobsComponent),
   },
   {
+    path: "candidates",
+    loadComponent: () => import("./pages/candidates/candidates.component").then((m) => m.CandidatesComponent),
+  },
+  {
     path: "job-matcher",
     loadComponent: () => import("./pages/job-matcher/job-matcher.component").then((m) => m.JobMatcherComponent),
   },

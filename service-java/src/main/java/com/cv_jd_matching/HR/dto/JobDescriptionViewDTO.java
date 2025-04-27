@@ -13,4 +13,7 @@ public class JobDescriptionViewDTO {
     private String jobTitle;
     private Integer id;
     private String accessLink;
+    private String companyOverview;
+    private String requiredQualifications;
+    private String jobDepartment;
 }

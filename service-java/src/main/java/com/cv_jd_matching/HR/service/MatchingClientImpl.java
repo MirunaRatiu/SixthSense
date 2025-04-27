@@ -7,10 +7,12 @@ import com.cv_jd_matching.HR.dto.MatchRequestDTO;
 import com.cv_jd_matching.HR.dto.MatchResponseDTO;
 import com.cv_jd_matching.HR.entity.Cv;
 import com.cv_jd_matching.HR.entity.JobDescription;
+import com.cv_jd_matching.HR.error.WrongWeightsException;
 import com.cv_jd_matching.HR.mapper.CvMapper;
 import com.cv_jd_matching.HR.mapper.JobDescriptionMapper;
 import com.cv_jd_matching.HR.repository.ICvRepository;
 import com.cv_jd_matching.HR.repository.IJobDescriptionRepository;
+import com.cv_jd_matching.HR.util.validator.AdditionalSkillsValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
@@ -73,21 +75,42 @@ public class MatchingClientImpl implements MatchingClient{
     public Mono<List<MatchResponseDTO>> matchCv(Integer cvId) {
         return webClient.post()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/delete/cv/{item_id}")
+                        .path("/match/cv/{item_id}")
                         .build(cvId))
                 .retrieve()
                 .bodyToFlux(MatchResponseDTO.class)
                 .collectList();
     }
 
-    public Mono<List<MatchResponseDTO>> matchJobDescription(Integer jdId) {
+    public Mono<List<MatchResponseDTO>> matchJobDescription(Integer jdId, Map<String, Integer> additionalSkills) throws WrongWeightsException {
+        String error = AdditionalSkillsValidator.validateWeights(additionalSkills);
+        if(error != null){
+            throw new WrongWeightsException(error);
+        }
         return webClient.post()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/delete/jd/{item_id}")
+                        .path("/match/jd/{item_id}")
                         .build(jdId))
                 .retrieve()
                 .bodyToFlux(MatchResponseDTO.class)
                 .collectList();
     }
 
+    public Mono<String> deleteCv(Integer cvId) {
+        return webClient.delete()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/delete/cv/{item_id}")
+                        .build(cvId))
+                .retrieve()
+                .bodyToMono(String.class);
+    }
+
+    public Mono<String> deleteJobDescription(Integer jdId) {
+        return webClient.delete()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/delete/jd/{item_id}")
+                        .build(jdId))
+                .retrieve()
+                .bodyToMono(String.class);
+    }
 }

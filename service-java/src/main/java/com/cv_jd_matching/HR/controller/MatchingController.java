@@ -1,5 +1,6 @@
 package com.cv_jd_matching.HR.controller;
 
+import com.cv_jd_matching.HR.error.WrongWeightsException;
 import com.cv_jd_matching.HR.service.MatchingClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,9 +32,8 @@ public class MatchingController {
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/match/jd")
-    public ResponseEntity<?> displayMatchScoreForJobDescription(@RequestParam("jdId") Integer jdId, @RequestParam("additionalSkills")Map<String, Integer> additionalSkills){
-
-        return new ResponseEntity<>(matchingClient.matchJobDescription(jdId).block(), HttpStatus.OK);
+    public ResponseEntity<?> displayMatchScoreForJobDescription(@RequestParam("jdId") Integer jdId, @RequestParam("additionalSkills")Map<String, Integer> additionalSkills) throws WrongWeightsException {
+        return new ResponseEntity<>(matchingClient.matchJobDescription(jdId, additionalSkills).block(), HttpStatus.OK);
     }
 
 }

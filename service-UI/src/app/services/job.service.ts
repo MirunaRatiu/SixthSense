@@ -1,166 +1,87 @@
 import { Injectable } from "@angular/core"
-import { HttpClient } from "@angular/common/http"
-import {  Observable, of, BehaviorSubject } from "rxjs"
+import {  HttpClient, HttpHeaders, HttpParams } from "@angular/common/http"
+import {  Observable, catchError, throwError, BehaviorSubject, of } from "rxjs"
+import { environment } from "../../environments/environment"
 import  { Job } from "../models/job.model"
 
 @Injectable({
   providedIn: "root",
 })
 export class JobService {
-  // Mock data for demonstration
-  private mockJobs: Job[] = [
-    {
-      id: 1,
-      positionName: "3D Artist",
-      client: "Apple",
-      clientLogo: "assets/logos/apple.png",
-      location: "Seattle, WA, United States",
-      headcount: "26 - 1",
-      stage: "1ST INTERVIEW",
-      salary: null,
-      requiredSkills: ["3D Modeling", "Blender", "Maya", "Texturing"],
-      description: "Create 3D models and assets for Apple products and marketing materials.",
-      experience: 3,
-    },
-    {
-      id: 2,
-      positionName: "Animator",
-      client: "Amazon",
-      clientLogo: "assets/logos/amazon.png",
-      location: "New York, NY, United States",
-      headcount: "14 - 1",
-      stage: "HIRED",
-      salary: null,
-      requiredSkills: ["2D Animation", "3D Animation", "After Effects", "Character Animation"],
-      description: "Create animations for Amazon marketing campaigns and product demonstrations.",
-      experience: 2,
-    },
-    {
-      id: 3,
-      positionName: "Business Manager",
-      client: "Amazon",
-      clientLogo: "assets/logos/amazon.png",
-      location: "Boston, MA, United States",
-      headcount: "4 - 1",
-      stage: "PROBATION PASS",
-      salary: null,
-      requiredSkills: ["Business Development", "Team Management", "Strategic Planning", "Budget Management"],
-      description: "Manage business operations for Amazon retail division.",
-      experience: 5,
-    },
-    {
-      id: 4,
-      positionName: "Chief Executive Officer (CEO)",
-      client: "Instagram",
-      clientLogo: "assets/logos/instagram.png",
-      location: "San Francisco, CA, United States",
-      headcount: "10 - 1",
-      stage: "PROBATION PASS",
-      salary: null,
-      requiredSkills: ["Leadership", "Strategic Planning", "Business Development", "Executive Management"],
-      description: "Lead the company and make high-level strategic decisions.",
-      experience: 10,
-    },
-    {
-      id: 5,
-      positionName: "Chief Executive Officer (CEO)",
-      client: "Hubspot",
-      clientLogo: "assets/logos/hubspot.png",
-      location: "New York, NY, United States",
-      headcount: "20 - 1",
-      stage: "PROBATION PASS",
-      salary: null,
-      requiredSkills: ["Leadership", "Strategic Planning", "Business Development", "Executive Management"],
-      description: "Lead the company and make high-level strategic decisions.",
-      experience: 10,
-    },
-    {
-      id: 6,
-      positionName: "Chief Marketing Officer (CMO)",
-      client: "Spotify",
-      clientLogo: "assets/logos/spotify.png",
-      location: "Stockton, CA, United States",
-      headcount: "3 - 1",
-      stage: "PROBATION PASS",
-      salary: null,
-      requiredSkills: ["Marketing Strategy", "Brand Management", "Digital Marketing", "Team Leadership"],
-      description: "Lead marketing efforts and develop marketing strategies.",
-      experience: 8,
-    },
-    {
-      id: 7,
-      positionName: "Chief Operating Officer (COO)",
-      client: "Instagram",
-      clientLogo: "assets/logos/instagram.png",
-      location: "San Francisco, CA, United States",
-      headcount: "6 - 1",
-      stage: "HIRED",
-      salary: null,
-      requiredSkills: ["Operations Management", "Strategic Planning", "Team Leadership", "Process Improvement"],
-      description: "Oversee day-to-day operations and implement business strategies.",
-      experience: 8,
-    },
-    {
-      id: 8,
-      positionName: "Chief Operating Officer (COO)",
-      client: "Amazon",
-      clientLogo: "assets/logos/amazon.png",
-      location: "Dallas, TX, United States",
-      headcount: "17 - 1",
-      stage: "HR INTERVIEW",
-      salary: null,
-      requiredSkills: ["Operations Management", "Strategic Planning", "Team Leadership", "Process Improvement"],
-      description: "Oversee day-to-day operations and implement business strategies.",
-      experience: 8,
-    },
-    {
-      id: 9,
-      positionName: "Chief Product Officer",
-      client: "Instagram",
-      clientLogo: "assets/logos/instagram.png",
-      location: "San Francisco, CA, United States",
-      headcount: "3 - 2",
-      stage: "HIRED",
-      salary: "45,000 USD",
-      requiredSkills: ["Product Management", "Product Strategy", "UX/UI Design", "Agile Methodologies"],
-      description: "Lead product development and strategy.",
-      experience: 7,
-    },
-    {
-      id: 10,
-      positionName: "Computer System Analyst",
-      client: "Instagram",
-      clientLogo: "assets/logos/instagram.png",
-      location: "Palo Alto, CA, United States",
-      headcount: "0 - 2",
-      stage: "",
-      salary: null,
-      requiredSkills: ["System Analysis", "IT Infrastructure", "Problem Solving", "Technical Documentation"],
-      description: "Analyze computer systems and recommend improvements.",
-      experience: 4,
-    },
-  ]
-
-  // constructor removed as HttpClient is not used
+  private apiUrl = `${environment.apiUrl}/jobDescription`
   private selectedJobSubject = new BehaviorSubject<Job | null>(null)
   selectedJob$ = this.selectedJobSubject.asObservable()
 
   constructor(private http: HttpClient) {}
 
-  getJobs(): Observable<Job[]> {
-    // In a real application, this would be an HTTP request to your backend
-    return of(this.mockJobs)
+  getJobs(filters?: any): Observable<Job[]> {
+    let params = new HttpParams()
+
+    if (filters) {
+      Object.keys(filters).forEach((key) => {
+        if (filters[key]) {
+          params = params.append(key, filters[key])
+        }
+      })
+    }
+
+    return this.http.get<Job[]>(`${this.apiUrl}/all`, { params }).pipe(
+      catchError((error) => {
+        console.error("Error fetching jobs:", error)
+        return throwError(() => new Error("Something went wrong. Please try again later."))
+      }),
+    )
   }
 
-  getJobById(id: number): Observable<Job | undefined> {
-    return of(this.mockJobs.find((job) => job.id === id))
+  getJobById(id: number): Observable<Job> {
+    return this.http.get<Job>(`${this.apiUrl}/${id}`).pipe(catchError(this.handleError))
   }
 
-  setSelectedJob(job: Job) {
+  createJob(job: Job): Observable<Job> {
+    return this.http.post<Job>(this.apiUrl, job).pipe(catchError(this.handleError))
+  }
+
+  updateJob(job: Job): Observable<Job> {
+    return this.http.put<Job>(`${this.apiUrl}/${job.id}`, job).pipe(catchError(this.handleError))
+  }
+
+  // Updated to accept an array of IDs
+  deleteJob(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/${id}`).pipe(
+      catchError((error) => {
+        console.error(`Error deleting job ${id}:`, error)
+        return of(null)
+      }),
+    )
+  }
+
+  // New method to delete multiple jobs at once
+  deleteJobs(ids: number[]): Observable<any> {
+    const options = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: ids // This will be sent as the request body
+    };
+    
+    // Using DELETE method with a request body
+    return this.http.delete(`${this.apiUrl}/delete`, options).pipe(
+      catchError((error) => {
+        console.error(`Error deleting jobs:`, error)
+        return of(null)
+      }),
+    )
+  }
+  setSelectedJob(job: Job): void {
     this.selectedJobSubject.next(job)
   }
 
   getSelectedJob(): Job | null {
     return this.selectedJobSubject.value
+  }
+
+  private handleError(error: any) {
+    console.error("An error occurred:", error)
+    return throwError(() => new Error("Something went wrong. Please try again later."))
   }
 }

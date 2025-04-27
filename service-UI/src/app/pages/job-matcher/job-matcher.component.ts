@@ -9,7 +9,7 @@ import { TableModule } from "primeng/table"
 import { ProgressBarModule } from "primeng/progressbar"
 import { TagModule } from "primeng/tag"
 import { SliderModule } from "primeng/slider"
-import { ChipModule } from 'primeng/chip';
+import { ChipModule } from "primeng/chip"
 import  { JobService } from "../../services/job.service"
 import  { MatchingService } from "../../services/matching.service"
 import  { Candidate } from "../../models/candidate.model"
@@ -29,7 +29,6 @@ interface SkillWeight {
     ReactiveFormsModule,
     CardModule,
     InputTextModule,
-    
     ButtonModule,
     TableModule,
     ProgressBarModule,
@@ -45,6 +44,8 @@ export class JobMatcherComponent implements OnInit {
   matchingCandidates: Candidate[] = []
   skillWeights: SkillWeight[] = []
   loading = false
+  loadingCandidates = false
+  error: string | null = null
   newSkill = ""
   rows = 10
   totalRecords = 0
@@ -65,10 +66,10 @@ export class JobMatcherComponent implements OnInit {
     }
 
     // Initialize skill weights
-    if (this.selectedJob.requiredSkills) {
-      this.skillWeights = this.selectedJob.requiredSkills.map((skill) => ({
+    if (this.selectedJob.preferredSkills) {
+      this.skillWeights = this.selectedJob.preferredSkills.map((skill) => ({
         name: skill,
-        weight: 50, // Default weight of 50%
+        weight: 50 // Default weight of  => ({
       }))
     }
 
@@ -76,26 +77,35 @@ export class JobMatcherComponent implements OnInit {
   }
 
   findMatches() {
-    this.loading = true
+    this.loadingCandidates = true
+    this.error = null
+
+    // Convert skill weights to the format expected by the API
+    const skillWeightsObj = this.skillWeights.reduce(
+      (obj, item) => {
+        obj[item.name] = item.weight
+        return obj
+      },
+      {} as Record<string, number>,
+    )
 
     // In a real app, you would pass the skill weights to the backend
-    this.matchingService.findMatchingCandidates(this.selectedJob).subscribe(
-      (candidates) => {
+    this.matchingService.findMatchingCandidates(this.selectedJob!, skillWeightsObj).subscribe({
+      next: (candidates) => {
         this.matchingCandidates = candidates
         this.totalRecords = candidates.length
-        this.loading = false
+        this.loadingCandidates = false
       },
-      (error) => {
-        console.error("Error finding matches:", error)
-        this.loading = false
+      error: (err) => {
+        console.error("Error finding matches:", err)
+        this.error = "Failed to find matching candidates. Please try again."
+        this.loadingCandidates = false
       },
-    )
+    })
   }
 
   updateSkillWeight(skill: SkillWeight) {
     console.log(`Updated weight for ${skill.name}: ${skill.weight}%`)
-    // In a real app, you would recalculate matches based on new weights
-    this.findMatches()
   }
 
   getSkillLevelClass(weight: number): string {
@@ -111,24 +121,25 @@ export class JobMatcherComponent implements OnInit {
         weight: 50,
       })
 
-      // Update the job's required skills
+      // Update the job's preferred skills
       if (this.selectedJob) {
-        this.selectedJob.requiredSkills = this.skillWeights.map((s) => s.name)
+        this.selectedJob.preferredSkills = this.skillWeights.map((s) => s.name)
       }
 
       this.newSkill = ""
-      this.findMatches()
     }
   }
 
   removeSkill(index: number) {
     this.skillWeights.splice(index, 1)
 
-    // Update the job's required skills
+    // Update the job's preferred skills
     if (this.selectedJob) {
-      this.selectedJob.requiredSkills = this.skillWeights.map((s) => s.name)
+      this.selectedJob.preferredSkills = this.skillWeights.map((s) => s.name)
     }
+  }
 
+  applyWeights() {
     this.findMatches()
   }
 

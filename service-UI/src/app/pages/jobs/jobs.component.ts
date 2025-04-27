@@ -1,9 +1,11 @@
-import { Component, type OnInit } from "@angular/core"
+import { Component,  OnInit } from "@angular/core"
 import { CommonModule } from "@angular/common"
 import { FormsModule } from "@angular/forms"
 import  { Router } from "@angular/router"
+import { HttpEventType, HttpResponse } from "@angular/common/http"
 import  { Job } from "../../models/job.model"
 import  { JobService } from "../../services/job.service"
+import  { UploadService } from "../../services/upload.service"
 
 interface JobWithSelection extends Job {
   selected?: boolean
@@ -17,15 +19,26 @@ interface JobWithSelection extends Job {
   styleUrls: ["./jobs.component.css"],
 })
 export class JobsComponent implements OnInit {
-  jobs: JobWithSelection[] = []
+  jobs: any[] = []
   rows = 10
   totalRecords = 0
   allSelected = false
   uploadedFiles: File[] = []
   isDragOver = false
+  loading = false
+  error: string | null = null
+  isDeleting = false
+
+  // File upload properties
+  currentFile?: File
+  progress = 0
+  uploadMessage = ""
+  isUploading = false
+  fileInfos: any[] = []
 
   constructor(
     private jobService: JobService,
+    private uploadService: UploadService,
     private router: Router,
   ) {}
 
@@ -34,10 +47,41 @@ export class JobsComponent implements OnInit {
   }
 
   loadJobs() {
-    this.jobService.getJobs().subscribe((data) => {
-      this.jobs = data.map((job) => ({ ...job, selected: false }))
-      this.totalRecords = data.length
+    this.loading = true
+    this.error = null
+    console.log("Starting to load jobs...")
+
+    this.jobService.getJobs().subscribe({
+      next: (data) => {
+        console.log("Jobs data received:", data)
+        // Use the data directly without transformation
+        if (data) {
+          this.jobs = Array.isArray(data) ? data : [data]
+          this.jobs = this.jobs.map((job) => ({ ...job, selected: false }))
+          this.totalRecords = this.jobs.length
+          console.log("Processed jobs:", this.jobs)
+        } else {
+          console.error("Invalid data format received:", data)
+          this.error = "Received invalid data format from server"
+          this.jobs = []
+          this.totalRecords = 0
+        }
+        this.loading = false
+      },
+      error: (err) => {
+        this.error = "Failed to load jobs. Please try again."
+        this.loading = false
+        console.error("Error loading jobs:", err)
+        this.jobs = []
+        this.totalRecords = 0
+      },
     })
+  }
+
+  // Navigate to job-matcher with the selected job
+  viewJobMatches(job: any) {
+    this.jobService.setSelectedJob(job)
+    this.router.navigate(["/job-matcher"])
   }
 
   // File upload methods
@@ -51,11 +95,6 @@ export class JobsComponent implements OnInit {
     event.preventDefault()
     event.stopPropagation()
     this.isDragOver = false
-  }
-  // Navigate to job-matcher with the selected job
-  viewJobMatches(job: Job) {
-    this.jobService.setSelectedJob(job)
-    this.router.navigate(["/job-matcher"])
   }
 
   onDrop(event: DragEvent) {
@@ -96,15 +135,83 @@ export class JobsComponent implements OnInit {
     this.uploadedFiles = []
   }
 
+  // Process files by uploading them to the server
   processFiles() {
-    // In a real application, you would send these files to your backend
-    console.log("Processing files:", this.uploadedFiles)
+    if (this.uploadedFiles.length === 0) {
+      alert("Please select at least one file to upload")
+      return
+    }
 
-    // Show success message or handle the response
-    alert(`Successfully processed ${this.uploadedFiles.length} files`)
+    this.isUploading = true
+    this.progress = 0
+    this.uploadMessage = ""
 
-    // Clear the files after processing
-    this.clearFiles()
+    // Upload each file one by one
+    this.uploadNextFile(0)
+  }
+
+  // Recursive function to upload files one by one
+  uploadNextFile(index: number) {
+    if (index >= this.uploadedFiles.length) {
+      // All files have been uploaded
+      this.isUploading = false
+      this.uploadMessage = "All files uploaded successfully!"
+      this.clearFiles()
+      this.loadJobs() // Reload jobs to show the newly uploaded ones
+      return
+    }
+
+    this.currentFile = this.uploadedFiles[index]
+    this.progress = 0
+
+    this.uploadService.uploadJobDescription(this.currentFile).subscribe({
+      next: (event: any) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          this.progress = Math.round((100 * event.loaded) / event.total)
+        } else if (event instanceof HttpResponse) {
+          try {
+            const response =  event.body
+            if (response.message) {
+              this.fileInfos.push({
+                name: this.currentFile!.name,
+                url: response.message.split("URL: ")[1],
+                status: "Success",
+              })
+            } else if (response.error) {
+              this.fileInfos.push({
+                name: this.currentFile!.name,
+                error: response.error,
+                status: "Failed",
+              })
+            }
+          } catch (e) {
+            console.error("Error parsing response:", e)
+            this.fileInfos.push({
+              name: this.currentFile!.name,
+              error: "Invalid server response",
+              status: "Failed",
+            })
+          }
+
+          // Upload the next file
+          this.uploadNextFile(index + 1)
+        }
+      },
+      error: (err: any) => {
+        this.progress = 0
+        this.uploadMessage = "Could not upload the file: " + this.currentFile?.name
+        console.error("Upload error:", err)
+
+        this.fileInfos.push({
+          name: this.currentFile!.name,
+          error: err.message,
+          status: "Failed",
+        })
+
+        // Continue with the next file despite the error
+        this.uploadNextFile(index + 1)
+      },
+    })
   }
 
   formatFileSize(bytes: number): string {
@@ -148,41 +255,68 @@ export class JobsComponent implements OnInit {
     return this.jobs.some((job) => job.selected)
   }
 
+  // Updated to match backend expectations
   deleteSelectedJobs() {
     if (confirm("Are you sure you want to delete the selected jobs?")) {
-      // In a real application, you would call your service to delete these jobs
-      this.jobs = this.jobs.filter((job) => !job.selected)
-      this.totalRecords = this.jobs.length
+      // Get all selected job IDs
+      const selectedJobIds = this.jobs.filter((job) => job.selected).map((job) => job.id)
 
-      // Show success message
-      alert("Selected jobs have been deleted")
+      if (selectedJobIds.length === 0) {
+        alert("No jobs selected for deletion")
+        return
+      }
+
+      this.isDeleting = true
+      console.log("Deleting job IDs:", selectedJobIds)
+
+      // Send the list of IDs to the backend
+      this.jobService.deleteJobs(selectedJobIds).subscribe({
+        next: (response) => {
+          console.log("Delete response:", response)
+          // Remove deleted jobs from the local array
+          this.jobs = this.jobs.filter((job) => !job.selected)
+          this.totalRecords = this.jobs.length
+          this.isDeleting = false
+          alert("Selected jobs have been deleted")
+        },
+        error: (error) => {
+          console.error("Error deleting jobs:", error)
+          this.isDeleting = false
+          alert("Failed to delete jobs. Please try again.")
+        },
+      })
     }
   }
 
-  getStatusDotClass(job: Job): string {
+  getStatusDotClass(job: any): string {
     // This is a placeholder - in a real app, you'd have logic to determine if a job is active
     return "active"
   }
 
-  getDepartment(job: Job): string {
+  getDepartment(job: any): string {
     // Extract department from job data
-    // This is a placeholder - in a real app, you'd have this data in your job model
+    const title = job?.jobTitle || ""
+
     if (
-      job.positionName.includes("Developer") ||
-      job.positionName.includes("Officer") ||
-      job.positionName.includes("Engineer")
+      title.includes("Developer") ||
+      title.includes("Officer") ||
+      title.includes("Engineer") ||
+      title.includes("Tech") ||
+      title.includes("IT")
     ) {
       return "Technology"
-    } else if (job.positionName.includes("Marketing")) {
+    } else if (title.includes("Marketing")) {
       return "Marketing"
-    } else if (job.positionName.includes("Sales")) {
+    } else if (title.includes("Sales")) {
       return "Sales"
     } else {
       return "General"
     }
   }
 
-  getDepartmentClass(job: Job): string {
+  getDepartmentClass(job: any): string {
+    if (!job) return "department-finance"
+
     const department = this.getDepartment(job)
     switch (department) {
       case "Technology":
@@ -196,7 +330,9 @@ export class JobsComponent implements OnInit {
     }
   }
 
-  getDepartmentIcon(job: Job): string {
+  getDepartmentIcon(job: any): string {
+    if (!job) return "pi-briefcase"
+
     const department = this.getDepartment(job)
     switch (department) {
       case "Technology":
@@ -225,9 +361,9 @@ export class JobsComponent implements OnInit {
     return ""
   }
 
-  getMaxSalary(job: Job): string {
+  getMaxSalary(job: any): string {
     // This is a placeholder - in a real app, you'd have this data in your job model
-    if (job.salary && job.salary.includes("USD")) {
+    if (job?.salary && typeof job.salary === "string" && job.salary.includes("USD")) {
       const minSalary = Number.parseInt(job.salary.replace(/[^0-9]/g, ""))
       return `${minSalary + 10000} USD`
     }
@@ -236,14 +372,6 @@ export class JobsComponent implements OnInit {
 
   onRowsChange() {
     // Handle rows per page change
-    console.log("Rows changed to:", this.rows)
-  }
-
-  navigateToJobMatcher() {
-    this.router.navigate(["/job-matcher"])
-  }
-
-  navigateToCvMatcher() {
-    this.router.navigate(["/cv-matcher"])
+    this.loadJobs()
   }
 }
