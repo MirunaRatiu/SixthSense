@@ -259,17 +259,16 @@ def get_match_score(model: SentenceTransformer, cv_collection_concat, cv_id: int
 
     explanation = {
         "industry_match": f"Industry score: {industry_score:.2f}%",
-        "technical_match": f"Matched weighted score: {technical_score:.2f}%",
-        "certification_bonus": f"Bonus from certifications: {cert_bonus:.2f}%",
-        "semantic_match": f"Responsibilities: {resp_score:.2f}%, Qualifications: {qual_score:.2f}%, Preferred skills: {preferred_skills_score:.2f}%",
-        "preferred_skills": f"Preferred skills score: {preferred_skills_score:.2f}%",
+        "technical_match": f"Technical match score: {technical_score:.2f}%",
+        "certification_bonus": f"Bonus from certifications score: {cert_bonus:.2f}/5",
+        "semantic_match": f"Responsibilities: {resp_score:.2f}%, Qualifications: {qual_score:.2f}%, Preferred skills: {preferred_skills_score:.2f}%, Languages: {language_score:.2f}%",
         "total_score": f"{final_score:.2f}%"
     }
 
     print(
-        f"\nFinal Breakdown:\nIndustry: {industry_score:.2f}, Tech: {technical_score:.2f}, Bonus(x/5): {cert_bonus:.2f}\n "
-        f"Responsibilities: {resp_score:.2f}, Qualifications: {qual_score:.2f}, Preferred skills: {preferred_skills_score:.2f}\n "
-        f"Languages: {language_score:.2f}\n "
+        f"\nFinal Breakdown:\nIndustry: {industry_score:.2f}\n "
+        f"Tech: {technical_score:.2f}, Bonus(x/5): {cert_bonus:.2f}\n "
+        f"Responsibilities: {resp_score:.2f}, Qualifications: {qual_score:.2f}, Preferred skills: {preferred_skills_score:.2f}, Languages: {language_score:.2f}\n "
         f"Total: {final_score:.2f}\n "
     )
 
