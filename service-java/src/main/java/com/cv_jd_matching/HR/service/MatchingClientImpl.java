@@ -89,11 +89,10 @@ public class MatchingClientImpl implements MatchingClient{
                 .block();
         return result.stream()
                 .map(matchResponseDTO -> {
-                    try {
-                        return matchResponseMapper.mapMatchToJobDTO(matchResponseDTO);
-                    } catch (InputException e) {
-                        throw new RuntimeException(e);
-                    }
+                    JobDescription jobDescription = jobDescriptionRepository.findById(matchResponseDTO.getId())
+                            .orElseThrow(() -> new RuntimeException(new InputException("The Job Description with id " + matchResponseDTO.getId() + " was not found.")));
+                    JobDescriptionViewDTO jobDescriptionViewDTO = JobDescriptionMapper.mapEntityToViewDTO(jobDescription);
+                    return MatchResponseMapper.mapMatchToJobDTO(matchResponseDTO, jobDescriptionViewDTO);
                 })
                 .collect(Collectors.toList());
     }
@@ -118,11 +117,10 @@ public class MatchingClientImpl implements MatchingClient{
                 .block();
         return result.stream()
                 .map(matchResponseDTO -> {
-                    try {
-                        return matchResponseMapper.mapMatchToCVDTO(matchResponseDTO);
-                    } catch (InputException e) {
-                        throw new RuntimeException(e);
-                    }
+                    Cv cv = cvRepository.findById(matchResponseDTO.getId())
+                            .orElseThrow(() -> new RuntimeException(new InputException("The CV with id " + matchResponseDTO.getId() + " was not found.")));
+                    CvViewDTO cvViewDTO = CvMapper.mapEntityToViewDTO(cv);
+                    return MatchResponseMapper.mapMatchToCVDTO(matchResponseDTO, cvViewDTO);
                 })
                 .collect(Collectors.toList());
     }
