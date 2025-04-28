@@ -5,6 +5,11 @@ import { environment } from "../../environments/environment"
 import  { Candidate } from "../models/candidate.model"
 import  { Job } from "../models/job.model"
 
+interface JobMatchRequestPayload {
+  jd: Job;
+  job_skills: Record<string, number>;
+}
+
 @Injectable({
   providedIn: "root",
 })
@@ -15,14 +20,14 @@ export class MatchingService {
 
   findMatchingCandidates(job: Job, skillWeights?: any): Observable<Candidate[]> {
     return this.http
-      .post<Candidate[]>(`${this.apiUrl}/job/${job.id}`, {
+      .post<Candidate[]>(`${this.apiUrl}/cv/${job.id}`, {
         skillWeights: skillWeights || {},
       })
       .pipe(catchError(this.handleError))
   }
 
   findMatchingJobs(candidateData: any): Observable<Job[]> {
-    return this.http.post<Job[]>(`${this.apiUrl}/candidate`, candidateData).pipe(catchError(this.handleError))
+    return this.http.post<Job[]>(`${this.apiUrl}/jd`, candidateData).pipe(catchError(this.handleError))
   }
 
   private handleError(error: any) {
