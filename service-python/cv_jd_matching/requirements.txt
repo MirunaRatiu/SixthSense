@@ -1,7 +1,11 @@
 fastapi
 uvicorn
-pydantic
 sentence-transformers
 chromadb
+google-generativeai
+scikit-learn
+torch
 numpy
+pydantic
+rapidfuzz
 httpx
