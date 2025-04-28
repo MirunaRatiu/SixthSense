@@ -56,7 +56,7 @@ export class UploadService {
         errorMessage = `Error: ${error.error.message}`
       } else {
         // Server-side error
-        errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`
+        errorMessage = `The automatic processing was not possible due to the scanned text or images in the CV. Please upload a CV in .docx format.`
       }
   
       console.error(errorMessage)

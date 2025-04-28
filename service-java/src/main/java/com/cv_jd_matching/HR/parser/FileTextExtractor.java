@@ -1,6 +1,7 @@
 package com.cv_jd_matching.HR.parser;
 
 import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -43,6 +44,26 @@ public class FileTextExtractor {
 
     public static String extractTextFromPdf(InputStream pdfInputStream) throws IOException {
         try (PDDocument document = PDDocument.load(pdfInputStream)) {
+            PDFTextStripper pdfStripper = new PDFTextStripper();
+            String extractedText = pdfStripper.getText(document).trim();
+
+            if (!extractedText.isEmpty()) {
+                return extractedText;
+            }
+
+            // Dacă nu am găsit text normal, încercăm OCR
+            PDFRenderer pdfRenderer = new PDFRenderer(document);
+            StringBuilder ocrText = new StringBuilder();
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                BufferedImage pageImage = pdfRenderer.renderImageWithDPI(i, 300);
+                ocrText.append(extractTextFromImage(bufferedImageToInputStream(pageImage))).append("\n");
+            }
+            return ocrText.toString();
+        }
+    }
+/*
+    public static String extractTextFromPdf(InputStream pdfInputStream) throws IOException {
+        try (PDDocument document = PDDocument.load(pdfInputStream)) {
             PDFRenderer pdfRenderer = new PDFRenderer(document);
             StringBuilder text = new StringBuilder();
 
@@ -54,7 +75,7 @@ public class FileTextExtractor {
             return text.toString();
         }
     }
-
+*/
     private static InputStream bufferedImageToInputStream(BufferedImage image) throws IOException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         ImageIO.write(image, "png", os);
