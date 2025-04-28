@@ -5,155 +5,126 @@ from main import app
 
 client = TestClient(app)
 
+
+
+# to test uncomment the function and run pytest -s test_embed_requests.py
+
+
+
+
 # def test_embed_cv():
 #     payload = {
-#         "id": 99,
-#         "technicalSkills": "Python, FastAPI",
-#         "foreignLanguages": "English, Spanish",
-#         "education": "MSc in Computer Science",
-#         "certifications": "AWS Certified",
-#         "projectExperience": "Built microservices",
-#         "workExperience": "5 years in tech",
-#         "others": "Hackathon winner"
+#         "id": 105,
+#         "technicalSkills": "[{skill=FPGA, level=VHDL}, {skill=Verilog}, {skill=Microcontrollers}, {skill=Arduino}, {skill=ESP32,STM32}, {skill=Data Structures}, {skill=C Java}, {skill=Software Development}, {skill=Java}, {skill=Python}, {skill=C/C++}, {skill=Machine Learning AI Basics}, {skill=Communication and collaboration}, {skill=Problem-Solving Analytical Thinking}]",
+#         "foreignLanguages": "[{language=Romanian, proficiency=nativ}, {language=English, proficiency=proficiency Cambridge Certificate}, {language=Italian}]",
+#         "education": "[{institution=Universitatea Tehnic? din Cluj-Napoca, degree=Bachelor, field_of_study=Computer Engineering, period={start_date=2022, end_date=2026}, technologies=[]}]",
+#         "certifications": "",
+#         "projectExperience": "[{title=OpenGL 3D Graphics, description=Developed a C++ and OpenGL application with camera controls, lighting, and texture mapping, technologies=[C++, OpenGL]}, {title=Communication Protocols, description=Implemented SPI, I2C, and Ethernet protocols using VHDL for FPGA systems, technologies=[VHDL, FPGA]}, {title=Volume Hand Control, description=Hand tracking image processing-based project, technologies=[]}]",
+#         "workExperience": "[{type=job, title=Roboatelier, company=UTCN, period={date=2024}, description=[Completed a robotics camp focused on Arduino, including an Ultrasonic Radar project], technologies=[Arduino]}, {type=job, title=Cloud Workshop, company=Accenture, period={date=2024}, description=[Learned about AWS Cloud technologies through teamwork-focused exercises], technologies=[AWS]}]",
+#         "others": "[{Contact Information=[{Email=muresan.davide2003@yahoo.com}, {Address=Transilvania, Romania}, {LinkedIn=GitHub}], Summary=[Passionate student in Computer Engineering at UTCN, eager to innovate and apply technology to solve real-world problems, I love turning ideas into solutions, exploring new technologies, and constantly pushing my limits to grow, I’m not here to just “do the work.” I’m here to leave my mark and create something cool, Let’s build something awesome!, I am at your service!], Interests and hobbies=[Everything that is related to technology, Hardware, AI/Machine Learning, In terms of sports I’m a swimming enthusiast prefer hiking and exploring the wonders of nature]}]"
 #     }
 #
 #     response = client.post("/embed/cv", json=payload)
 #     assert response.status_code == 200
 #     assert response.json() == "success"
-#
+
+
+
+
 # def test_embed_jd():
-#     payload = {
-#         "id": 46,
-#         "jobTitle": "AI Engineer",
-#         "companyOverview": "Tech startup",
-#         "keyResponsibilities": "Build ML pipelines",
-#         "requiredQualifications": "CS degree",
-#         "preferredSkills": "FastAPI, PyTorch"
+#     payload = { # 13 din mysql
+#         "id": 1001,
+#         "jobTitle": "Machine Learning Engineer Tech Lead",
+#         "companyOverview": "Innovative Solutions Inc. is a leading technology company dedicated to transforming industries through cutting-edge artificial intelligence and machine learning solutions. Our mission is to empower businesses with intelligent systems that drive efficiency, enhance decision-making, and unlock new opportunities. We pride ourselves on fostering a collaborative and inclusive work environment where creativity and innovation thrive.",
+#         "keyResponsibilities": "{original_statement=Lead and mentor a team of machine learning engineers, providing technical guidance and career development support., group=[{group=[{task=Lead a team of machine learning engineers}, {task=Mentor a team of machine learning engineers}], group_type=AND}, {task=Provide technical guidance}, {task=Provide career development support}], group_type=AND} {original_statement=Design, develop, and deploy scalable machine learning models and algorithms to solve complex business problems., group=[{task=Design scalable machine learning models and algorithms to solve complex business problems}, {task=Develop scalable machine learning models and algorithms to solve complex business problems}, {task=Deploy scalable machine learning models and algorithms to solve complex business problems}], group_type=AND} {original_statement=Collaborate with cross-functional teams, including data scientists, software engineers, and product managers, to integrate machine learning solutions into products and services., task=Collaborate with cross-functional teams, including data scientists, software engineers, and product managers, to integrate machine learning solutions into products and services} {original_statement=Evaluate and implement state-of-the-art machine learning techniques and tools to enhance model performance and accuracy., group=[{task=Evaluate state-of-the-art machine learning techniques and tools to enhance model performance and accuracy}, {task=Implement state-of-the-art machine learning techniques and tools to enhance model performance and accuracy}], group_type=AND} {original_statement=Oversee the end-to-end lifecycle of machine learning projects, from data collection and preprocessing to model training and deployment., task=Oversee the end-to-end lifecycle of machine learning projects, from data collection and preprocessing to model training and deployment} {original_statement=Ensure best practices in code quality, testing, and documentation are followed within the team., group=[{task=Ensure best practices in code quality are followed within the team}, {task=Ensure best practices in testing are followed within the team}, {task=Ensure best practices in documentation are followed within the team}], group_type=AND} {original_statement=Stay updated with the latest advancements in machine learning and AI technologies, and drive innovation within the team., group=[{task=Stay updated with the latest advancements in machine learning and AI technologies}, {task=Drive innovation within the team}], group_type=AND}",
+#         "requiredQualifications": "{original_statement=Bachelor’s or Master’s degree in Computer Science, Engineering, Mathematics, or a related field., group=[{group=[{requirement=Bachelor’s degree in Computer Science, Engineering, Mathematics, or a related field}, {requirement=Master’s degree in Computer Science, Engineering, Mathematics, or a related field}], group_type=OR}], group_type=AND} {original_statement=Minimum of 5 years of experience in machine learning, with at least 2 years in a leadership or tech lead role., group=[{requirement=Minimum of 5 years of experience in machine learning}, {requirement=At least 2 years in a leadership role}, {requirement=At least 2 years in a tech lead role}], group_type=AND} {original_statement=Strong proficiency in Python and experience with machine learning frameworks such as TensorFlow, PyTorch, or Scikit-learn., group=[{requirement=Strong proficiency in Python}, {requirement=Experience with machine learning frameworks such as TensorFlow, PyTorch, or Scikit-learn}], group_type=AND} {original_statement=Proven track record of deploying machine learning models in production environments., requirement=Proven track record of deploying machine learning models in production environments} {original_statement=Excellent problem-solving skills and the ability to work independently and collaboratively in a fast-paced environment., group=[{requirement=Excellent problem-solving skills}, {requirement=The ability to work independently in a fast-paced environment}, {requirement=The ability to work collaboratively in a fast-paced environment}], group_type=AND} {original_statement=Strong communication skills, with the ability to convey complex technical concepts to non-technical stakeholders., requirement=Strong communication skills, with the ability to convey complex technical concepts to non-technical stakeholders}",
+#         "preferredSkills": "{original_statement=Experience with cloud platforms such as AWS, Google Cloud, or Azure., group=[{group=[{skill=Experience with cloud platforms such as AWS}, {skill=Experience with cloud platforms such as Google Cloud}, {skill=Experience with cloud platforms such as Azure}], group_type=OR}], group_type=AND} {original_statement=Familiarity with big data technologies like Hadoop, Spark, or Kafka., group=[{group=[{skill=Familiarity with big data technologies like Hadoop}, {skill=Familiarity with big data technologies like Spark}, {skill=Familiarity with big data technologies like Kafka}], group_type=OR}], group_type=AND} {original_statement=Knowledge of deep learning architectures and natural language processing., group=[{skill=Knowledge of deep learning architectures}, {skill=Knowledge of natural language processing}], group_type=AND} {original_statement=Experience with version control systems, such as Git, and CI/CD pipelines., group=[{skill=Experience with version control systems, such as Git}, {skill=Experience with CI/CD pipelines}], group_type=AND} {original_statement=Strong understanding of data structures, algorithms, and software design principles., group=[{skill=Strong understanding of data structures}, {skill=Strong understanding of algorithms}, {skill=Strong understanding of software design principles}], group_type=AND}",
+#         "message": "AI and Machine Learning Solutions industry"
 #     }
 #
 #     response = client.post("/embed/jd", json=payload)
 #     assert response.status_code == 200
 #     assert response.json() == "success"
+
 #
 #
-# def test_delete_cv_embeddings():
-#     # Step 1: Embed a CV with id 99
-#     payload = {
-#         "id": 99,
-#         "technicalSkills": "Python, FastAPI",
-#         "foreignLanguages": "English, Spanish",
-#         "education": "MSc in Computer Science",
-#         "certifications": "AWS Certified",
-#         "projectExperience": "Built microservices",
-#         "workExperience": "5 years in tech",
-#         "others": "Hackathon winner"
+# def test_match_jd():
+#     job_skills = {"Python": 30, "TensorFlow": 20, "NPL": 20, "Teamwork": 30}
+#     jd_payload = {
+#         "id": 1001,
+#         "jobTitle": "Machine Learning Engineer Tech Lead",
+#         "companyOverview": "Innovative Solutions Inc. is a leading technology company dedicated to transforming industries through cutting-edge artificial intelligence and machine learning solutions. Our mission is to empower businesses with intelligent systems that drive efficiency, enhance decision-making, and unlock new opportunities. We pride ourselves on fostering a collaborative and inclusive work environment where creativity and innovation thrive.",
+#         "keyResponsibilities": "{original_statement=Lead and mentor a team of machine learning engineers, providing technical guidance and career development support., group=[{group=[{task=Lead a team of machine learning engineers}, {task=Mentor a team of machine learning engineers}], group_type=AND}, {task=Provide technical guidance}, {task=Provide career development support}], group_type=AND} {original_statement=Design, develop, and deploy scalable machine learning models and algorithms to solve complex business problems., group=[{task=Design scalable machine learning models and algorithms to solve complex business problems}, {task=Develop scalable machine learning models and algorithms to solve complex business problems}, {task=Deploy scalable machine learning models and algorithms to solve complex business problems}], group_type=AND} {original_statement=Collaborate with cross-functional teams, including data scientists, software engineers, and product managers, to integrate machine learning solutions into products and services., task=Collaborate with cross-functional teams, including data scientists, software engineers, and product managers, to integrate machine learning solutions into products and services} {original_statement=Evaluate and implement state-of-the-art machine learning techniques and tools to enhance model performance and accuracy., group=[{task=Evaluate state-of-the-art machine learning techniques and tools to enhance model performance and accuracy}, {task=Implement state-of-the-art machine learning techniques and tools to enhance model performance and accuracy}], group_type=AND} {original_statement=Oversee the end-to-end lifecycle of machine learning projects, from data collection and preprocessing to model training and deployment., task=Oversee the end-to-end lifecycle of machine learning projects, from data collection and preprocessing to model training and deployment} {original_statement=Ensure best practices in code quality, testing, and documentation are followed within the team., group=[{task=Ensure best practices in code quality are followed within the team}, {task=Ensure best practices in testing are followed within the team}, {task=Ensure best practices in documentation are followed within the team}], group_type=AND} {original_statement=Stay updated with the latest advancements in machine learning and AI technologies, and drive innovation within the team., group=[{task=Stay updated with the latest advancements in machine learning and AI technologies}, {task=Drive innovation within the team}], group_type=AND}",
+#         "requiredQualifications": "{original_statement=Bachelor’s or Master’s degree in Computer Science, Engineering, Mathematics, or a related field., group=[{group=[{requirement=Bachelor’s degree in Computer Science, Engineering, Mathematics, or a related field}, {requirement=Master’s degree in Computer Science, Engineering, Mathematics, or a related field}], group_type=OR}], group_type=AND} {original_statement=Minimum of 5 years of experience in machine learning, with at least 2 years in a leadership or tech lead role., group=[{requirement=Minimum of 5 years of experience in machine learning}, {requirement=At least 2 years in a leadership role}, {requirement=At least 2 years in a tech lead role}], group_type=AND} {original_statement=Strong proficiency in Python and experience with machine learning frameworks such as TensorFlow, PyTorch, or Scikit-learn., group=[{requirement=Strong proficiency in Python}, {requirement=Experience with machine learning frameworks such as TensorFlow, PyTorch, or Scikit-learn}], group_type=AND} {original_statement=Proven track record of deploying machine learning models in production environments., requirement=Proven track record of deploying machine learning models in production environments} {original_statement=Excellent problem-solving skills and the ability to work independently and collaboratively in a fast-paced environment., group=[{requirement=Excellent problem-solving skills}, {requirement=The ability to work independently in a fast-paced environment}, {requirement=The ability to work collaboratively in a fast-paced environment}], group_type=AND} {original_statement=Strong communication skills, with the ability to convey complex technical concepts to non-technical stakeholders., requirement=Strong communication skills, with the ability to convey complex technical concepts to non-technical stakeholders}",
+#         "preferredSkills": "{original_statement=Experience with cloud platforms such as AWS, Google Cloud, or Azure., group=[{group=[{skill=Experience with cloud platforms such as AWS}, {skill=Experience with cloud platforms such as Google Cloud}, {skill=Experience with cloud platforms such as Azure}], group_type=OR}], group_type=AND} {original_statement=Familiarity with big data technologies like Hadoop, Spark, or Kafka., group=[{group=[{skill=Familiarity with big data technologies like Hadoop}, {skill=Familiarity with big data technologies like Spark}, {skill=Familiarity with big data technologies like Kafka}], group_type=OR}], group_type=AND} {original_statement=Knowledge of deep learning architectures and natural language processing., group=[{skill=Knowledge of deep learning architectures}, {skill=Knowledge of natural language processing}], group_type=AND} {original_statement=Experience with version control systems, such as Git, and CI/CD pipelines., group=[{skill=Experience with version control systems, such as Git}, {skill=Experience with CI/CD pipelines}], group_type=AND} {original_statement=Strong understanding of data structures, algorithms, and software design principles., group=[{skill=Strong understanding of data structures}, {skill=Strong understanding of algorithms}, {skill=Strong understanding of software design principles}], group_type=AND}",
+#         "message": "AI and Machine Learning Solutions industry"
+#     }
+#     request_payload = {
+#         "jd": jd_payload,
+#         "job_skills": job_skills
 #     }
 #
-#     embed_response = client.post("/embed/cv", json=payload)
-#     assert embed_response.status_code == 200
-#     assert embed_response.json() == "success"
+#     response = client.post("/match/jd", json=request_payload)
 #
-#     # Step 2: Delete the CV embeddings with raw JSON number
-#     delete_response = client.request(
-#         method="DELETE",
-#         url="/delete/cv",
-#         data="99",  # Raw integer as a string (valid JSON)
-#         headers={"Content-Type": "application/json"}
-#     )
+#     # Afisarea răspunsului pentru vizualizare
+#     print(response.json())
 #
-#     assert delete_response.status_code == 200, f"Unexpected error: {delete_response.text}"
-#     response_data = delete_response.json()
-#     assert response_data["status"] == "success"
-#     assert all(str(i).startswith("99_") for i in response_data["deleted_ids"])
+#     assert response.status_code == 200
+#     assert isinstance(response.json(), list)
+#     assert len(response.json()) > 0
+#     assert "score" in response.json()[0]
+#     assert "explanation" in response.json()[0]
+#     assert "id" in response.json()[0]
 #
-#     # Step 3: Confirm deletion
-#     collection_contents = cv_collection.get(include=["metadatas"])
-#     remaining_ids = collection_contents["ids"]
-#     assert not any(id.startswith("99_") for id in remaining_ids)
-
-
-
-
-# @pytest.fixture
-# def match_request_payload():
-#     return {
-#         "cv": {
-#             "id": 101,
-#             "technicalSkills": "[{skill=Java}, {skill=Python}, {skill=SpringBoot}, {skill=HTML}, {skill=C++}, {skill=CSS}, {skill=MySQL}, {skill=Git}]",
-#             "foreignLanguages": "[{language=English, proficiency=fluent}, {language=German, proficiency=classroom study}, {language=Romanian, proficiency=native}]",
-#             "education": "[{institution=Technical University of Cluj-Napoca, degree=Bachelor, field_of_study=Science, period={start_date=2022-10, end_date=Present}, technologies=[]}]",
-#             "certifications": "[{name=AWS Certified Developer - Associate, institution=null, technologies=[]}, {name=Microsoft Certified: Azure Developer Associate, institution=null, technologies=[]}, {name=Google Professional Cloud Developer, institution=null, technologies=[]}]",
-#             "projectExperience": "[{title=SpringLibrary, description=A web application that enables the management of books from a catalogue. It has different types of users that can perform actions based on their roles. e The login system is based on Java Spring Security. - The project has an architecture that combines Layers and MVC while adhering to SOLID principles., technologies=[SpringBoot, Spring Security, Lombok, Gradle, Thymeleaf, HTML]}, {title=Library, description=A desktop application which was designed to be used in a real-life bookstore, where employees can add or sell books and managers can obtain reports. - It has different types of users that can perform actions based on their roles. Design patterns: Decorator, Builder and FactoryMethod., technologies=[Java, Gradle]}, {title=TheShire, description=An interactive application built using OpenGL which features free first-person exploration, dynamic scene transitions, advanced lighting and graphical effects., technologies=[C++, OpenGL, GLSL, GLM]}]",
-#             "workExperience": "[{type=job, title=Intern Java Software Engineer, company=Accesa, period={start_date=2023-09}, description=[During my one month at Accesa, | studied alongside a Senior Java Developer and worked on Java and SpringBoot based applications.], technologies=[Java, SpringBoot]}, {type=job, title=Apprentice, company=Accesa, period={start_date=2021-07}, description=[This was a two week apprenticeship where | shadowed two Senior Java Developers and learned how the Agile methodology works.], technologies=[Java]}]",
-#             "others": "[{About Me=[The things that drive me are curiosity, ambition and a strong desire to become better than yesterday's version of myself., | believe in kindness and authenticity, especially while working in team settings., | have a strong sense of leadership, given that | have volunteered for 4 years as a team leader in a youth organization., That is how | discovered that | thrive in environments where creativity, genuineness and hard work are valued., That is what I'm searching for: a team with which | can create and work on amazing projects that make Monday mornings exiting.], Contact Information=[{Address=cluj-Napoca, Romania}, {Phone number=+40) 737 016 376}, {Email=molnar.sara.viviana@gmail.com}, {Website=Portfolio Website}, {LinkedIn=Linkedin}], Hobbies=[Escaping into fictional worlds while reading., Helping children discover their interests and strengths through Library volunteering., Researching and soul-searching in order to write impactful articles and stories.], Interpersonal Skills=[Organization, Adaptability and empathy, Team leading], Publications=[Timpul - avem si nu avem, In this article I explored the pitfalls of procrastination and how one can avoid going down the rabbit hole of time wasting., 1984 de George Orwell - impresii, This is my review for George Orwell's classic dystopian, 1984., EduBiz lanseaza proiectul \"Aripi de file\", This is the story of how | ended up coordinating a book club in my hometown.]}]"
-#         },
-#         "jd": {
-#             "id": 1001,
-#             "jobTitle": "Senior UI/UX Designer",
-#             "companyOverview": "InnovateTech Solutions is a leading technology company dedicated to creating cutting-edge digital products that enhance user experiences across various platforms. Our team is passionate about innovation, creativity, and delivering exceptional solutions that meet the evolving needs of our clients. We pride ourselves on fostering a collaborative and inclusive work environment where every team member's ideas are valued and contribute to our success.",
-#             "keyResponsibilities": "{original_statement=Lead the design and development of user interfaces and experiences for web and mobile applications, ensuring a seamless and intuitive user journey., group=[{group=[{task=Lead the design of user interfaces and experiences for web and mobile applications, ensuring a seamless and intuitive user journey}, {task=Lead the development of user interfaces and experiences for web and mobile applications, ensuring a seamless and intuitive user journey}], group_type=AND}], group_type=AND} {original_statement=Collaborate with cross-functional teams, including product managers, developers, and other designers, to translate business requirements into innovative design solutions., task=Collaborate with cross-functional teams, including product managers, developers, and other designers, to translate business requirements into innovative design solutions} {original_statement=Conduct user research and usability testing to gather insights and validate design concepts, iterating based on feedback to enhance user satisfaction., group=[{group=[{task=Conduct user research to gather insights and validate design concepts, iterating based on feedback to enhance user satisfaction}, {task=Conduct usability testing to gather insights and validate design concepts, iterating based on feedback to enhance user satisfaction}], group_type=AND}], group_type=AND} {original_statement=Create wireframes, prototypes, and high-fidelity designs using industry-standard design tools, ensuring consistency with brand guidelines and design systems., group=[{group=[{task=Create wireframes using industry-standard design tools, ensuring consistency with brand guidelines and design systems}, {task=Create prototypes using industry-standard design tools, ensuring consistency with brand guidelines and design systems}, {task=Create high-fidelity designs using industry-standard design tools, ensuring consistency with brand guidelines and design systems}], group_type=AND}], group_type=AND} {original_statement=Mentor and provide guidance to junior designers, fostering a culture of continuous learning and improvement within the design team., group=[{group=[{task=Mentor junior designers, fostering a culture of continuous learning and improvement within the design team}, {task=Provide guidance to junior designers, fostering a culture of continuous learning and improvement within the design team}], group_type=AND}], group_type=AND} {original_statement=Stay updated with the latest UI/UX trends, techniques, and technologies, and apply them to improve design processes and deliverables., task=Stay updated with the latest UI/UX trends, techniques, and technologies, and apply them to improve design processes and deliverables} {original_statement=Present design concepts and solutions to stakeholders, articulating design rationale and incorporating feedback to refine designs., task=Present design concepts and solutions to stakeholders, articulating design rationale and incorporating feedback to refine designs} ",
-#             "requiredQualifications": "{original_statement=Bachelor’s degree in Design, Human-Computer Interaction, or a related field., group=[{group=[{requirement=Bachelor’s degree in Design}, {requirement=Bachelor’s degree in Human-Computer Interaction}, {requirement=Bachelor’s degree in a related field}], group_type=OR}], group_type=AND} {original_statement=Minimum of 5 years of experience in UI/UX design, with a strong portfolio showcasing diverse design projects., requirement=Minimum of 5 years of experience in UI/UX design, with a strong portfolio showcasing diverse design projects} {original_statement=Proficiency in design software such as Adobe Creative Suite, Sketch, Figma, or similar tools., group=[{group=[{requirement=Proficiency in design software such as Adobe Creative Suite}, {requirement=Proficiency in design software such as Sketch}, {requirement=Proficiency in design software such as Figma}, {requirement=Proficiency in design software such as similar tools}], group_type=OR}], group_type=AND} {original_statement=Strong understanding of user-centered design principles and best practices., requirement=Strong understanding of user-centered design principles and best practices} {original_statement=Excellent communication and presentation skills, with the ability to articulate design decisions effectively., group=[{group=[{requirement=Excellent communication skills, with the ability to articulate design decisions effectively}, {requirement=Excellent presentation skills, with the ability to articulate design decisions effectively}], group_type=AND}], group_type=AND}",
-#             "preferredSkills": "{original_statement=Experience with front-end development technologies such as HTML, CSS, and JavaScript., group=[{group=[{skill=Experience with front-end development technologies such as HTML}, {skill=Experience with front-end development technologies such as CSS}, {skill=Experience with front-end development technologies such as JavaScript}], group_type=AND}], group_type=AND} {original_statement=Familiarity with agile methodologies and working in an agile environment., group=[{group=[{skill=Familiarity with agile methodologies}, {skill=Working in an agile environment}], group_type=AND}], group_type=AND} {original_statement=Knowledge of accessibility standards and best practices in design., skill=Knowledge of accessibility standards and best practices in design} {original_statement=Experience in designing for a variety of platforms, including web, mobile, and emerging technologies like AR/VR., group=[{group=[{skill=Experience in designing for a variety of platforms, including web}, {skill=Experience in designing for a variety of platforms, including mobile}, {skill=Experience in designing for a variety of platforms, including emerging technologies like AR/VR}], group_type=AND}], group_type=AND}"
-#         },
-#         "job_skills": {
-#             "Python": 30,
-#             "TensorFlow": 20,
-#             "PyTorch": 20,
-#             "Scikit-learn": 10,
-#             "AWS": 10,
-#             "Git": 10
-#         },
-#         "industry_keywords": [
-#             "machine learning",
-#             "artificial intelligence",
-#             "AI",
-#             "data science"
-#         ]
+#
+# def test_match_cv():
+#     jd_payload_1 = {
+#         "id": 1001,
+#         "jobTitle": "Machine Learning Engineer Tech Lead",
+#         "companyOverview": "Innovative Solutions Inc. is a leading technology company dedicated to transforming industries through cutting-edge artificial intelligence and machine learning solutions. Our mission is to empower businesses with intelligent systems that drive efficiency, enhance decision-making, and unlock new opportunities. We pride ourselves on fostering a collaborative and inclusive work environment where creativity and innovation thrive.",
+#         "keyResponsibilities": "{original_statement=Lead and mentor a team of machine learning engineers, providing technical guidance and career development support., group=[{group=[{task=Lead a team of machine learning engineers}, {task=Mentor a team of machine learning engineers}], group_type=AND}, {task=Provide technical guidance}, {task=Provide career development support}], group_type=AND} {original_statement=Design, develop, and deploy scalable machine learning models and algorithms to solve complex business problems., group=[{task=Design scalable machine learning models and algorithms to solve complex business problems}, {task=Develop scalable machine learning models and algorithms to solve complex business problems}, {task=Deploy scalable machine learning models and algorithms to solve complex business problems}], group_type=AND} {original_statement=Collaborate with cross-functional teams, including data scientists, software engineers, and product managers, to integrate machine learning solutions into products and services., task=Collaborate with cross-functional teams, including data scientists, software engineers, and product managers, to integrate machine learning solutions into products and services} {original_statement=Evaluate and implement state-of-the-art machine learning techniques and tools to enhance model performance and accuracy., group=[{task=Evaluate state-of-the-art machine learning techniques and tools to enhance model performance and accuracy}, {task=Implement state-of-the-art machine learning techniques and tools to enhance model performance and accuracy}], group_type=AND} {original_statement=Oversee the end-to-end lifecycle of machine learning projects, from data collection and preprocessing to model training and deployment., task=Oversee the end-to-end lifecycle of machine learning projects, from data collection and preprocessing to model training and deployment} {original_statement=Ensure best practices in code quality, testing, and documentation are followed within the team., group=[{task=Ensure best practices in code quality are followed within the team}, {task=Ensure best practices in testing are followed within the team}, {task=Ensure best practices in documentation are followed within the team}], group_type=AND} {original_statement=Stay updated with the latest advancements in machine learning and AI technologies, and drive innovation within the team., group=[{task=Stay updated with the latest advancements in machine learning and AI technologies}, {task=Drive innovation within the team}], group_type=AND}",
+#         "requiredQualifications": "{original_statement=Bachelor’s or Master’s degree in Computer Science, Engineering, Mathematics, or a related field., group=[{group=[{requirement=Bachelor’s degree in Computer Science, Engineering, Mathematics, or a related field}, {requirement=Master’s degree in Computer Science, Engineering, Mathematics, or a related field}], group_type=OR}], group_type=AND} {original_statement=Minimum of 5 years of experience in machine learning, with at least 2 years in a leadership or tech lead role., group=[{requirement=Minimum of 5 years of experience in machine learning}, {requirement=At least 2 years in a leadership role}, {requirement=At least 2 years in a tech lead role}], group_type=AND} {original_statement=Strong proficiency in Python and experience with machine learning frameworks such as TensorFlow, PyTorch, or Scikit-learn., group=[{requirement=Strong proficiency in Python}, {requirement=Experience with machine learning frameworks such as TensorFlow, PyTorch, or Scikit-learn}], group_type=AND} {original_statement=Proven track record of deploying machine learning models in production environments., requirement=Proven track record of deploying machine learning models in production environments} {original_statement=Excellent problem-solving skills and the ability to work independently and collaboratively in a fast-paced environment., group=[{requirement=Excellent problem-solving skills}, {requirement=The ability to work independently in a fast-paced environment}, {requirement=The ability to work collaboratively in a fast-paced environment}], group_type=AND} {original_statement=Strong communication skills, with the ability to convey complex technical concepts to non-technical stakeholders., requirement=Strong communication skills, with the ability to convey complex technical concepts to non-technical stakeholders}",
+#         "preferredSkills": "{original_statement=Experience with cloud platforms such as AWS, Google Cloud, or Azure., group=[{group=[{skill=Experience with cloud platforms such as AWS}, {skill=Experience with cloud platforms such as Google Cloud}, {skill=Experience with cloud platforms such as Azure}], group_type=OR}], group_type=AND} {original_statement=Familiarity with big data technologies like Hadoop, Spark, or Kafka., group=[{group=[{skill=Familiarity with big data technologies like Hadoop}, {skill=Familiarity with big data technologies like Spark}, {skill=Familiarity with big data technologies like Kafka}], group_type=OR}], group_type=AND} {original_statement=Knowledge of deep learning architectures and natural language processing., group=[{skill=Knowledge of deep learning architectures}, {skill=Knowledge of natural language processing}], group_type=AND} {original_statement=Experience with version control systems, such as Git, and CI/CD pipelines., group=[{skill=Experience with version control systems, such as Git}, {skill=Experience with CI/CD pipelines}], group_type=AND} {original_statement=Strong understanding of data structures, algorithms, and software design principles., group=[{skill=Strong understanding of data structures}, {skill=Strong understanding of algorithms}, {skill=Strong understanding of software design principles}], group_type=AND}",
+#         "message": "AI and Machine Learning Solutions industry"
 #     }
+#     jd_payload_2 = {
+#         "id": 1030,
+#         "jobTitle": "Mid-level SAP Developer",
+#         "companyOverview": "At Tech Innovators Inc., we are committed to delivering cutting-edge technology solutions that empower businesses to achieve their goals. Our team is composed of forward-thinking professionals who are passionate about leveraging technology to drive innovation and efficiency. We pride ourselves on fostering a collaborative and inclusive work environment where creativity and expertise are valued and nurtured.",
+#         "keyResponsibilities": "{original_statement=Develop, implement, and maintain SAP applications and solutions to meet business requirements., group=[{group=[{task=Develop SAP applications and solutions to meet business requirements}, {task=Implement SAP applications and solutions to meet business requirements}, {task=Maintain SAP applications and solutions to meet business requirements}], group_type=AND}], group_type=AND} {original_statement=Collaborate with cross-functional teams to gather and analyze requirements, translating them into technical specifications., task=Collaborate with cross-functional teams to gather and analyze requirements, translating them into technical specifications} {original_statement=Customize and configure SAP modules, ensuring seamless integration with existing systems., task=Customize and configure SAP modules, ensuring seamless integration with existing systems} {original_statement=Perform unit testing, integration testing, and support user acceptance testing to ensure high-quality deliverables., group=[{group=[{task=Perform unit testing to ensure high-quality deliverables}, {task=Perform integration testing to ensure high-quality deliverables}, {task=Support user acceptance testing to ensure high-quality deliverables}], group_type=AND}], group_type=AND} {original_statement=Troubleshoot and resolve SAP-related issues, providing timely support and solutions., task=Troubleshoot and resolve SAP-related issues, providing timely support and solutions} {original_statement=Participate in code reviews and contribute to the development of best practices and coding standards., group=[{group=[{task=Participate in code reviews}, {task=Contribute to the development of best practices}, {task=Contribute to the development of coding standards}], group_type=AND}], group_type=AND} {original_statement=Document technical specifications, system configurations, and user manuals for future reference., group=[{group=[{task=Document technical specifications for future reference}, {task=Document system configurations for future reference}, {task=Document user manuals for future reference}], group_type=AND}], group_type=AND} {original_statement=Stay updated with the latest SAP technologies and industry trends to propose innovative solutions., task=Stay updated with the latest SAP technologies and industry trends to propose innovative solutions}",
+#         "requiredQualifications": "{original_statement=Bachelor’s degree in Computer Science, Information Technology, or a related field., group=[{group=[{requirement=Bachelor’s degree in Computer Science}, {requirement=Bachelor’s degree in Information Technology}, {requirement=Bachelor’s degree in a related field}], group_type=OR}], group_type=AND} {original_statement=3-5 years of experience in SAP development, including ABAP programming and SAP module customization., group=[{group=[{requirement=3-5 years of experience in SAP development}, {requirement=3-5 years of experience in ABAP programming}, {requirement=3-5 years of experience in SAP module customization}], group_type=AND}], group_type=AND} {original_statement=Strong understanding of SAP modules such as SD, MM, FI/CO, or HR., group=[{group=[{requirement=Strong understanding of SAP modules such as SD}, {requirement=Strong understanding of SAP modules such as MM}, {requirement=Strong understanding of SAP modules such as FI/CO}, {requirement=Strong understanding of SAP modules such as HR}], group_type=OR}], group_type=AND} {original_statement=Proficiency in SAP development tools and methodologies., requirement=Proficiency in SAP development tools and methodologies} {original_statement=Excellent problem-solving skills and attention to detail., group=[{group=[{requirement=Excellent problem-solving skills}, {requirement=Excellent attention to detail}], group_type=AND}], group_type=AND} {original_statement=Strong communication and interpersonal skills, with the ability to work effectively in a team environment., group=[{group=[{requirement=Strong communication skills}, {requirement=Strong interpersonal skills}, {requirement=Ability to work effectively in a team environment}], group_type=AND}], group_type=AND}",
+#         "preferredSkills": "{original_statement=Experience with SAP S/4HANA or SAP Fiori., group=[{group=[{skill=Experience with SAP S/4HANA}, {skill=Experience with SAP Fiori}], group_type=OR}], group_type=AND} {original_statement=Knowledge of SAP integration technologies such as SAP PI/PO or SAP Cloud Platform Integration., group=[{group=[{skill=Knowledge of SAP integration technologies such as SAP PI/PO}, {skill=Knowledge of SAP integration technologies such as SAP Cloud Platform Integration}], group_type=OR}], group_type=AND} {original_statement=Familiarity with Agile development methodologies., skill=Familiarity with Agile development methodologies} {original_statement=SAP certification in relevant modules or technologies., skill=SAP certification in relevant modules or technologies} {original_statement=Experience with SAP data migration and data management., group=[{group=[{skill=Experience with SAP data migration}, {skill=Experience with SAP data management}], group_type=AND}], group_type=AND}",
+#         "message": "banking"
+#     }
+#
+#     cv_payload = 103  # Assuming CV ID 99 exists
+#
+#     request_payload = {
+#         "cv": cv_payload,
+#         "jd": [jd_payload_1, jd_payload_2]
+#     }
+#
+#     response = client.post("/match/cv", json=request_payload)
+#
+#     print(response.json())
+#
+#     assert response.status_code == 200
+#     assert isinstance(response.json(), list)
+#     assert len(response.json()) > 0
+#     assert "score" in response.json()[0]
+#     assert "explanation" in response.json()[0]
+#     assert "id" in response.json()[0]
 
-
-
-
-def test_match_cv_to_jd_success():
-    match_request_payload = {
-        "cv": {
-            "id": 1,
-            "technicalSkills": "Python, TensorFlow, AWS",
-            "foreignLanguages": "English, German",
-            "education": "Bachelor of Computer Science",
-            "certifications": "AWS Certified Developer - Associate",
-            "projectExperience": "Developed a recommendation engine using PyTorch",
-            "workExperience": "Worked at XYZ Corp as a Software Engineer",
-            "others": "Adaptable, quick learner"
-        },
-        "jd": {
-            "id": 1001,
-            "jobTitle": "Senior UI/UX Designer",
-            "companyOverview": "InnovateTech Solutions is a leading technology company dedicated to creating cutting-edge digital products that enhance user experiences across various platforms. Our team is passionate about innovation, creativity, and delivering exceptional solutions that meet the evolving needs of our clients. We pride ourselves on fostering a collaborative and inclusive work environment where every team member's ideas are valued and contribute to our success.",
-            "keyResponsibilities": "{original_statement=Lead the design and development of user interfaces and experiences for web and mobile applications, ensuring a seamless and intuitive user journey., group=[{group=[{task=Lead the design of user interfaces and experiences for web and mobile applications, ensuring a seamless and intuitive user journey}, {task=Lead the development of user interfaces and experiences for web and mobile applications, ensuring a seamless and intuitive user journey}], group_type=AND}], group_type=AND} {original_statement=Collaborate with cross-functional teams, including product managers, developers, and other designers, to translate business requirements into innovative design solutions., task=Collaborate with cross-functional teams, including product managers, developers, and other designers, to translate business requirements into innovative design solutions} {original_statement=Conduct user research and usability testing to gather insights and validate design concepts, iterating based on feedback to enhance user satisfaction., group=[{group=[{task=Conduct user research to gather insights and validate design concepts, iterating based on feedback to enhance user satisfaction}, {task=Conduct usability testing to gather insights and validate design concepts, iterating based on feedback to enhance user satisfaction}], group_type=AND}], group_type=AND} {original_statement=Create wireframes, prototypes, and high-fidelity designs using industry-standard design tools, ensuring consistency with brand guidelines and design systems., group=[{group=[{task=Create wireframes using industry-standard design tools, ensuring consistency with brand guidelines and design systems}, {task=Create prototypes using industry-standard design tools, ensuring consistency with brand guidelines and design systems}, {task=Create high-fidelity designs using industry-standard design tools, ensuring consistency with brand guidelines and design systems}], group_type=AND}], group_type=AND} {original_statement=Mentor and provide guidance to junior designers, fostering a culture of continuous learning and improvement within the design team., group=[{group=[{task=Mentor junior designers, fostering a culture of continuous learning and improvement within the design team}, {task=Provide guidance to junior designers, fostering a culture of continuous learning and improvement within the design team}], group_type=AND}], group_type=AND} {original_statement=Stay updated with the latest UI/UX trends, techniques, and technologies, and apply them to improve design processes and deliverables., task=Stay updated with the latest UI/UX trends, techniques, and technologies, and apply them to improve design processes and deliverables} {original_statement=Present design concepts and solutions to stakeholders, articulating design rationale and incorporating feedback to refine designs., task=Present design concepts and solutions to stakeholders, articulating design rationale and incorporating feedback to refine designs} ",
-            "requiredQualifications": "{original_statement=Bachelor’s degree in Design, Human-Computer Interaction, or a related field., group=[{group=[{requirement=Bachelor’s degree in Design}, {requirement=Bachelor’s degree in Human-Computer Interaction}, {requirement=Bachelor’s degree in a related field}], group_type=OR}], group_type=AND} {original_statement=Minimum of 5 years of experience in UI/UX design, with a strong portfolio showcasing diverse design projects., requirement=Minimum of 5 years of experience in UI/UX design, with a strong portfolio showcasing diverse design projects} {original_statement=Proficiency in design software such as Adobe Creative Suite, Sketch, Figma, or similar tools., group=[{group=[{requirement=Proficiency in design software such as Adobe Creative Suite}, {requirement=Proficiency in design software such as Sketch}, {requirement=Proficiency in design software such as Figma}, {requirement=Proficiency in design software such as similar tools}], group_type=OR}], group_type=AND} {original_statement=Strong understanding of user-centered design principles and best practices., requirement=Strong understanding of user-centered design principles and best practices} {original_statement=Excellent communication and presentation skills, with the ability to articulate design decisions effectively., group=[{group=[{requirement=Excellent communication skills, with the ability to articulate design decisions effectively}, {requirement=Excellent presentation skills, with the ability to articulate design decisions effectively}], group_type=AND}], group_type=AND}",
-            "preferredSkills": "{original_statement=Experience with front-end development technologies such as HTML, CSS, and JavaScript., group=[{group=[{skill=Experience with front-end development technologies such as HTML}, {skill=Experience with front-end development technologies such as CSS}, {skill=Experience with front-end development technologies such as JavaScript}], group_type=AND}], group_type=AND} {original_statement=Familiarity with agile methodologies and working in an agile environment., group=[{group=[{skill=Familiarity with agile methodologies}, {skill=Working in an agile environment}], group_type=AND}], group_type=AND} {original_statement=Knowledge of accessibility standards and best practices in design., skill=Knowledge of accessibility standards and best practices in design} {original_statement=Experience in designing for a variety of platforms, including web, mobile, and emerging technologies like AR/VR., group=[{group=[{skill=Experience in designing for a variety of platforms, including web}, {skill=Experience in designing for a variety of platforms, including mobile}, {skill=Experience in designing for a variety of platforms, including emerging technologies like AR/VR}], group_type=AND}], group_type=AND}"
-        },
-        "job_skills": {
-            "Python": 30,
-            "TensorFlow": 20,
-
-            "AWS": 20,
-            "PyTorch": 30
-        },
-        "industry_keywords": [
-            "artificial intelligence",
-            "cloud services",
-            "machine learning"
-        ]
-    }
-    response = client.post("/match/aux", json=match_request_payload)
-    
-    assert response.status_code == 200
-    response_json = response.json()
-
-    assert "score" in response_json
-    assert isinstance(response_json["score"], (float, int))
-
-    assert "explanation" in response_json
-    assert isinstance(response_json["explanation"], dict)
+#
+#
+# def test_delete_cv():
+#     # Assuming CV with id=99 exists in the collection
+#     response = client.delete("/delete/cv/105")
+#     assert response.status_code == 200
+#     assert response.json() == "Success"
+#
+# def test_delete_jd():
+#     # Assuming JD with id=101 exists in the collection
+#     response = client.delete("/delete/jd/1001")
+#     assert response.status_code == 200
+#     assert response.json() == "Success"

@@ -238,8 +238,8 @@ def get_match_score(model: SentenceTransformer, cv: dict, job: dict, job_skills:
 
     explanation = {
         "industry_match": f"Industry score: {industry_score:.2f}%",
-        "technical_match": f"Matched weighted score: {technical_score:.2f}%",
-        "certification_bonus": f"Bonus from certifications: {cert_bonus:.2f}%",
+        "technical_match": f"Technical match score: {technical_score:.2f}%",
+        "certification_bonus": f"Bonus from certifications score: {cert_bonus:.2f}%",
         "semantic_match": f"Responsibilities: {resp_score:.2f}%, Qualifications: {qual_score:.2f}%, Preferred skills: {preferred_skills_score:.2f}%",
         "preferred_skills": f"Preferred skills score: {preferred_skills_score:.2f}%",
         "total_score": f"{final_score:.2f}%"
