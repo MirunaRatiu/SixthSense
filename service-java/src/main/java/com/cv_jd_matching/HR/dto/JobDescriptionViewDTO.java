@@ -18,6 +18,8 @@ public class JobDescriptionViewDTO {
     private String companyOverview;
     private String requiredQualifications;
     private String jobDepartment;
+
     private String keyResponsabilities;
     private List<String> preferredSkills;
+
 }

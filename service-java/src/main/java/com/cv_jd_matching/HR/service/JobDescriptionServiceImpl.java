@@ -6,6 +6,9 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.cv_jd_matching.HR.dto.JobDescriptionDTO;
 import com.cv_jd_matching.HR.dto.JobDescriptionViewDTO;
 import com.cv_jd_matching.HR.entity.JobDescription;
+
+import com.cv_jd_matching.HR.error.InputException;
+
 import com.cv_jd_matching.HR.error.PathException;
 import com.cv_jd_matching.HR.mapper.JobDescriptionMapper;
 import com.cv_jd_matching.HR.repository.IJobDescriptionRepository;
@@ -25,7 +28,9 @@ import java.util.stream.StreamSupport;
 public class JobDescriptionServiceImpl implements JobDescriptionService {
     private final IJobDescriptionRepository jobDescriptionRepository;
     private final MatchingClient matchingClient;
+
     private final WebClient webClient;
+
 
     @Value("${spring.cloud.azure.storage.connection-string}")
     private String connectionString;
@@ -42,6 +47,7 @@ public class JobDescriptionServiceImpl implements JobDescriptionService {
         jobDescriptionRepository.deleteAll(jobDescriptions);
         for(Integer id: jobIDs){
             matchingClient.deleteJobDescription(id).subscribe();
+
         }
     }
     private BlobContainerClient getContainerClient(String containerName) {
@@ -91,6 +97,7 @@ public class JobDescriptionServiceImpl implements JobDescriptionService {
                     .retrieve()
                     .bodyToMono(String.class)
                     .subscribe();
+
         }
     }
 
@@ -101,10 +108,10 @@ public class JobDescriptionServiceImpl implements JobDescriptionService {
         return jobList.stream().map(JobDescriptionMapper::mapEntityToViewDTO).toList();
     }
 
-    public JobDescriptionViewDTO getJobDescriptionById(Integer id){
+    public JobDescriptionViewDTO getJobDescriptionById(Integer id) throws InputException {
         Optional<JobDescription> job = jobDescriptionRepository.findById(id);
         if(job.isEmpty()){
-            throw new RuntimeException("Wrong id");
+            throw new InputException("Wrong id");
         }
         return JobDescriptionMapper.mapEntityToViewDTO(job.get());
     }

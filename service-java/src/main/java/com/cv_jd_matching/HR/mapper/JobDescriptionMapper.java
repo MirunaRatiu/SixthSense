@@ -31,8 +31,10 @@ public class JobDescriptionMapper {
                 .jobDepartment(jobDescription.getMessage())
                 .companyOverview(jobDescription.getCompanyOverview())
                 .requiredQualifications(parseOriginalStatements(jobDescription.getRequiredQualifications()))
+
                 .keyResponsabilities(parseOriginalStatements(jobDescription.getKeyResponsibilities()))
                 .preferredSkills(parseOriginalStatementsToList(jobDescription.getPreferredSkills()))
+
                 .build();
     }
 
@@ -72,6 +74,7 @@ public class JobDescriptionMapper {
 
         return result.toString().trim();
     }
+
 
     private static List<String> parseOriginalStatementsToList(String input) {
         List<String> statements = new ArrayList<>();

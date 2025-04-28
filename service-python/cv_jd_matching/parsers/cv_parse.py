@@ -157,3 +157,6 @@ def transform_dto_to_cv(dto: dict) -> dict:
 # pprint(parsed_cv)
 # for item in parsed_cv["others"]["Publications"]:
 #     print(f"- {item}")
+
+
+

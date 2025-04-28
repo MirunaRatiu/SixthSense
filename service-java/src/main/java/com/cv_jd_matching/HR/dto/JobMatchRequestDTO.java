@@ -2,23 +2,20 @@ package com.cv_jd_matching.HR.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
 import java.util.Map;
 
 @Data
 @AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public class MatchRequestDTO {
-    @JsonProperty("cv")
-
-    private Integer cv;
-
+public class JobMatchRequestDTO {
 
     @JsonProperty("jd")
-    private JobDescriptionDTO jd;
+    private JobDescriptionDTO jobDescription;
 
     @JsonProperty("job_skills")
     private Map<String, Integer> jobSkills;

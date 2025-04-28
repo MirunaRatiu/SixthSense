@@ -1,15 +1,23 @@
 package com.cv_jd_matching.HR.service;
 
 import com.cv_jd_matching.HR.config.WebClientConfig;
+
 import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.JobDescriptionDTO;
 import com.cv_jd_matching.HR.dto.MatchRequestDTO;
 import com.cv_jd_matching.HR.dto.MatchResponseDTO;
 import com.cv_jd_matching.HR.entity.Cv;
 import com.cv_jd_matching.HR.entity.JobDescription;
+
+import com.cv_jd_matching.HR.dto.*;
+import com.cv_jd_matching.HR.entity.Cv;
+import com.cv_jd_matching.HR.entity.JobDescription;
+import com.cv_jd_matching.HR.error.InputException;
+
 import com.cv_jd_matching.HR.error.WrongWeightsException;
 import com.cv_jd_matching.HR.mapper.CvMapper;
 import com.cv_jd_matching.HR.mapper.JobDescriptionMapper;
+import com.cv_jd_matching.HR.mapper.MatchResponseMapper;
 import com.cv_jd_matching.HR.repository.ICvRepository;
 import com.cv_jd_matching.HR.repository.IJobDescriptionRepository;
 import com.cv_jd_matching.HR.util.validator.AdditionalSkillsValidator;
@@ -23,10 +31,15 @@ import reactor.core.publisher.Mono;
 
 import java.util.*;
 
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+
 @Service
 @RequiredArgsConstructor
 public class MatchingClientImpl implements MatchingClient{
     private final WebClient webClient;
+    private final MatchResponseMapper matchResponseMapper;
     private final ICvRepository cvRepository;
     private final IJobDescriptionRepository jobDescriptionRepository;
 
@@ -47,7 +60,9 @@ public class MatchingClientImpl implements MatchingClient{
         jobSkills.put("AWS", 10);
         jobSkills.put("Git", 10);
 
-        MatchRequestDTO requestDTO = new MatchRequestDTO(cvDTO, jobDescriptionDTO, jobSkills);
+
+        MatchRequestDTO requestDTO = new MatchRequestDTO(cvId, jobDescriptionDTO, jobSkills);
+
 
         return webClient.post()
                 .uri("/match/aux")
@@ -72,28 +87,61 @@ public class MatchingClientImpl implements MatchingClient{
                 .bodyToMono(String.class);
     }
 
-    public Mono<List<MatchResponseDTO>> matchCv(Integer cvId) {
-        return webClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/match/cv/{item_id}")
-                        .build(cvId))
+
+    public List<JobMatchResponseDTO> matchCv(Integer cvId) {
+        List<JobDescription> jobDescriptions = StreamSupport
+                .stream(jobDescriptionRepository.findAll().spliterator(), false)
+                .toList();
+        CvMatchRequestDTO cvMatchRequestDTO = new CvMatchRequestDTO(cvId, jobDescriptions.stream().map(JobDescriptionMapper::mapEntityToDTO).toList());
+
+        List<MatchResponseDTO> result =  webClient.post()
+                .uri("/match/cv")
+                .bodyValue(cvMatchRequestDTO)
                 .retrieve()
                 .bodyToFlux(MatchResponseDTO.class)
-                .collectList();
+                .collectList()
+                .block();
+        return result.stream()
+                .map(matchResponseDTO -> {
+                    try {
+                        return matchResponseMapper.mapMatchToJobDTO(matchResponseDTO);
+                    } catch (InputException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
-    public Mono<List<MatchResponseDTO>> matchJobDescription(Integer jdId, Map<String, Integer> additionalSkills) throws WrongWeightsException {
+    public List<CvMatchResponseDTO> matchJobDescription(Integer jdId, Map<String, Integer> additionalSkills) throws WrongWeightsException, InputException {
+
         String error = AdditionalSkillsValidator.validateWeights(additionalSkills);
         if(error != null){
             throw new WrongWeightsException(error);
         }
-        return webClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/match/jd/{item_id}")
-                        .build(jdId))
+
+        Optional<JobDescription> jobDescription = jobDescriptionRepository.findById(jdId);
+        if(jobDescription.isEmpty()){
+            throw new InputException("BAD MATCHING INPUT!");
+        }
+        JobDescriptionDTO jobDescriptionDTO = JobDescriptionMapper.mapEntityToDTO(jobDescription.get());
+        JobMatchRequestDTO jobMatchRequestDTO = new JobMatchRequestDTO(jobDescriptionDTO, additionalSkills);
+        List<MatchResponseDTO> result = webClient.post()
+                .uri("/match/jd")
+                .bodyValue(jobMatchRequestDTO)
                 .retrieve()
                 .bodyToFlux(MatchResponseDTO.class)
-                .collectList();
+                .collectList()
+                .block();
+        return result.stream()
+                .map(matchResponseDTO -> {
+                    try {
+                        return matchResponseMapper.mapMatchToCVDTO(matchResponseDTO);
+                    } catch (InputException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.toList());
+
     }
 
     public Mono<String> deleteCv(Integer cvId) {

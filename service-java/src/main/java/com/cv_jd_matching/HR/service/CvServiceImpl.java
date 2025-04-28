@@ -6,7 +6,11 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.CvViewDTO;
 import com.cv_jd_matching.HR.entity.Cv;
+
 import com.cv_jd_matching.HR.entity.JobDescription;
+
+import com.cv_jd_matching.HR.error.InputException;
+
 import com.cv_jd_matching.HR.error.PathException;
 import com.cv_jd_matching.HR.mapper.CvMapper;
 import com.cv_jd_matching.HR.repository.ICvRepository;
@@ -28,6 +32,7 @@ public class CvServiceImpl implements CvService{
 
     private final ICvRepository cvRepository;
     private final MatchingClient matchingClient;
+
     private final WebClient webClient;
 
 
@@ -36,6 +41,7 @@ public class CvServiceImpl implements CvService{
 
     @Value("cvs")
     private String containerName1;
+
 
     public List<CvViewDTO> getCvs(){
         Iterable<Cv> cvs = cvRepository.findAll();
@@ -53,6 +59,7 @@ public class CvServiceImpl implements CvService{
         for(Integer id: ids){
             matchingClient.deleteCv(id).subscribe();
         }
+
     }
 */
 private BlobContainerClient getContainerClient(String containerName) {
@@ -102,6 +109,7 @@ public void deleteFiles(List<Integer> cvIds) {
                 .retrieve()
                 .bodyToMono(String.class)
                 .subscribe();
+
     }
 }
 
@@ -111,5 +119,14 @@ public void deleteFiles(List<Integer> cvIds) {
             throw new PathException("Wrong path");
         }
         return CvMapper.mapEntityToDTO(cv.get());
+    }
+
+    @Override
+    public CvViewDTO getCvById(Integer id) throws InputException {
+        Optional<Cv> cv = cvRepository.findById(id);
+        if(cv.isEmpty()){
+            throw new InputException("The cv with that id is not saved in the database");
+        }
+        return CvMapper.mapEntityToViewDTO(cv.get());
     }
 }

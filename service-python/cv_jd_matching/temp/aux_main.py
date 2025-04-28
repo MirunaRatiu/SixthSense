@@ -8,7 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import chromadb
 print("0")
 # === Setup ChromaDB & Model ===
-chroma_client = chromadb.PersistentClient(path="./chroma_data")
+chroma_client = chromadb.PersistentClient(path="../chroma_data")
 print("1")
 cv_collection = chroma_client.get_or_create_collection(name="cv_embeddings")
 print("2")
