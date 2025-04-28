@@ -326,7 +326,6 @@ public class BlobServiceClient {
         }
     }
 
-
     public boolean deleteCvBlob(String fileName) {
         if (fileName == null || fileName.trim().isEmpty()) {
             // Cannot delete if file name is invalid

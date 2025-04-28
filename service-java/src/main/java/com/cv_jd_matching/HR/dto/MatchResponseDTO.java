@@ -12,5 +12,7 @@ import java.util.Map;
 public class MatchResponseDTO {
     private float score;
     private Map<String, String> explanation;
+
     private Integer id;
+
 }

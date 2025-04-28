@@ -13,7 +13,9 @@ import java.util.Map;
 @NoArgsConstructor
 public class MatchRequestDTO {
     @JsonProperty("cv")
+
     private Integer cv;
+
 
     @JsonProperty("jd")
     private JobDescriptionDTO jd;

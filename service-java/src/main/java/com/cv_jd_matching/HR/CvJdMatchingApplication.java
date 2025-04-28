@@ -19,19 +19,6 @@ public class CvJdMatchingApplication {
 
 	public static void main(String[] args) {
 
-//		String filePath = "hhhhh.docx";
-//
-//		// Deschide fișierul .docx ca InputStream
-//		try (InputStream inputStream = new FileInputStream(filePath)) {
-//			// Apelează funcția extractTextFromDocx
-//			String text = CvParser.extractTextFromDocx(inputStream);
-//
-//			// Afișează textul extras
-//			System.out.println("Text extrase din fișierul .docx:");
-//			System.out.println(text);
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
        SpringApplication.run(CvJdMatchingApplication.class, args);
 	}
 

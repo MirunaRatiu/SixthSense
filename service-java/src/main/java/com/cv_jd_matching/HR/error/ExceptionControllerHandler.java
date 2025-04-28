@@ -27,6 +27,7 @@ public class ExceptionControllerHandler {
         return createHttpResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
+
     @ExceptionHandler(InputException.class)
     public ResponseEntity<HttpErrorResponse> idsException(PathException exception)
     {

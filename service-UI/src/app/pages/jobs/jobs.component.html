@@ -1,0 +1,186 @@
+<div class="jobs-page animate-fadeIn">
+  <!-- Header with title and notification badge -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Jobs <span class="notification-badge" data-count="1"></span></h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-danger" [disabled]="!hasSelectedJobs()" (click)="deleteSelectedJobs()">
+        <i class="pi pi-trash"></i> Delete Selected
+      </button>
+    </div>
+  </div>
+
+  <!-- CV Upload Area -->
+  <div class="upload-area" 
+       [class.active]="isDragOver" 
+       (dragover)="onDragOver($event)" 
+       (dragleave)="onDragLeave($event)" 
+       (drop)="onDrop($event)">
+    <div class="upload-content">
+      <i class="pi pi-cloud-upload upload-icon"></i>
+      <h3 class="upload-title">Upload Job Description Files</h3>
+      <p class="upload-hint">Drag & drop your job description files here or click to browse</p>
+      <input type="file" 
+             #fileInput 
+             multiple 
+             accept=".pdf,.doc,.docx" 
+             class="file-input" 
+             (change)="onFileSelected($event)">
+      <button class="btn btn-primary upload-btn" (click)="fileInput.click()">
+        <i class="pi pi-upload"></i> Browse Files
+      </button>
+    </div>
+  </div>
+
+  <!-- Uploaded Files Preview -->
+  <div class="uploaded-files" *ngIf="uploadedFiles.length > 0">
+    <h3 class="section-title">Files Ready to Upload</h3>
+    <div class="files-grid">
+      <div class="file-card" *ngFor="let file of uploadedFiles; let i = index">
+        <div class="file-icon">
+          <i class="pi" [ngClass]="getFileIcon(file)"></i>
+        </div>
+        <div class="file-info">
+          <div class="file-name">{{ file.name }}</div>
+          <div class="file-size">{{ formatFileSize(file.size) }}</div>
+        </div>
+        <button class="file-remove" (click)="removeFile(i)">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    </div>
+    <div class="upload-actions">
+      <button class="btn btn-success" [disabled]="isUploading" (click)="processFiles()">
+        <i class="pi" [ngClass]="isUploading ? 'pi-spinner pi-spin' : 'pi-check'"></i> 
+        {{ isUploading ? 'Uploading...' : 'Upload Job Descriptions' }}
+      </button>
+      <button class="btn btn-outline" [disabled]="isUploading" (click)="clearFiles()">
+        <i class="pi pi-trash"></i> Clear All
+      </button>
+    </div>
+  </div>
+
+  <!-- Upload Progress -->
+  <div *ngIf="isUploading" class="upload-progress">
+    <div class="progress-container">
+      <div class="progress-bar" [style.width.%]="progress"></div>
+    </div>
+    <p class="progress-text">Uploading {{ currentFile?.name }} - {{ progress }}%</p>
+  </div>
+
+  <!-- Upload Results -->
+  <div *ngIf="fileInfos.length > 0" class="upload-results">
+    <h3 class="section-title">Upload Results</h3>
+    <div class="results-list">
+      <div *ngFor="let info of fileInfos" class="result-item" [ngClass]="info.status === 'Success' ? 'success' : 'error'">
+        <i class="pi" [ngClass]="info.status === 'Success' ? 'pi-check-circle' : 'pi-times-circle'"></i>
+        <div class="result-details">
+          <div class="result-name">{{ info.name }}</div>
+          <div *ngIf="info.status === 'Success'" class="result-url">{{ info.url }}</div>
+          <div *ngIf="info.status === 'Failed'" class="result-error">{{ info.error }}</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-outline" (click)="fileInfos = []">
+      <i class="pi pi-times"></i> Clear Results
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading jobs...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-container">
+    <i class="pi pi-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" (click)="loadJobs()">Try Again</button>
+  </div>
+
+  <!-- Jobs table -->
+  <div class="table-container card" *ngIf="!loading && !error">
+    <table class="jobs-table">
+      <thead>
+        <tr>
+          <th class="checkbox-col">
+            <div class="custom-checkbox" [class.checked]="allSelected" (click)="toggleSelectAll()"></div>
+          </th>
+          <th class="sortable-col">
+            Position Name
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Job Department
+            <i class="pi pi-sort"></i>
+          </th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let job of jobs; let i = index" (click)="viewJobMatches(job)" class="clickable-row">
+          <td class="checkbox-col" (click)="$event.stopPropagation()">
+            <div class="custom-checkbox" 
+                 [class.checked]="job.selected" 
+                 (click)="toggleJobSelection(i)"></div>
+          </td>
+          <td class="position-col">
+            <div class="position-info">
+              <div class="status-dot" [ngClass]="getStatusDotClass(job)"></div>
+              <span>{{ job.jobTitle }}</span>
+            </div>
+          </td>
+          <td class="department-col">
+            <div class="department-badge">
+              <div class="department-icon" [ngClass]="getDepartmentClass(job)">
+                <i class="pi" [ngClass]="getDepartmentIcon(job)"></i>
+              </div>
+              <span>{{ getDepartment(job) }}</span>
+            </div>
+
+   
+          <td>
+            <button class="btn btn-primary btn-sm" (click)="$event.stopPropagation(); viewJobMatches(job)">
+              <i class="pi pi-users"></i> Find Matches
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="!loading && !error">
+    <div class="pagination-info">
+      <span>Results per page:</span>
+      <select [(ngModel)]="rows" (change)="onRowsChange()">
+        <option [value]="10">10</option>
+        <option [value]="20">20</option>
+        <option [value]="50">50</option>
+      </select>
+      <span>1-{{ jobs.length > rows ? rows : jobs.length }} of {{ totalRecords }}</span>
+    </div>
+    <div class="pagination-controls">
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-double-left"></i>
+      </button>
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-left"></i>
+      </button>
+      <button class="pagination-btn active">1</button>
+      <button class="pagination-btn">2</button>
+      <button class="pagination-btn">3</button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-right"></i>
+      </button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-double-right"></i>
+      </button>
+    </div>
+    <div class="total-records">
+      {{ totalRecords }} total jobs
+    </div>
+  </div>
+</div>

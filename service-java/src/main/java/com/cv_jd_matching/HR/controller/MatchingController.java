@@ -1,6 +1,8 @@
 package com.cv_jd_matching.HR.controller;
 
+
 import com.cv_jd_matching.HR.error.InputException;
+
 import com.cv_jd_matching.HR.error.WrongWeightsException;
 import com.cv_jd_matching.HR.service.MatchingClient;
 import lombok.RequiredArgsConstructor;
@@ -29,12 +31,14 @@ public class MatchingController {
 
     @RequestMapping(method = RequestMethod.POST, value = "/match/cv")
     public ResponseEntity<?> displayMatchScoreForCV(@RequestParam("cvId") Integer cvId){
+
         return new ResponseEntity<>(matchingClient.matchCv(cvId), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/match/jd")
     public ResponseEntity<?> displayMatchScoreForJobDescription(@RequestParam("jdId") Integer jdId, @RequestParam("additionalSkills")Map<String, Integer> additionalSkills) throws WrongWeightsException, InputException {
         return new ResponseEntity<>(matchingClient.matchJobDescription(jdId, additionalSkills), HttpStatus.OK);
+
     }
 
 }
