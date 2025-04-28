@@ -15,7 +15,9 @@ import  { JobService } from "../../services/job.service"
 import  { MatchingService } from "../../services/matching.service"
 import  { Candidate } from "../../models/candidate.model"
 import  { Job } from "../../models/job.model"
-
+import {JobMatchRequestPayload} from '../../models/JobMatchRequestPayload.model';
+//import {CvMatchResponseDTO} from '../../models/CvMatchResponseDTO';
+//import {CvViewDTO} from '../../models/CvViewDTO'
 // Update the SkillWeight interface to include a locked property
 interface SkillWeight {
   name: string
@@ -31,6 +33,18 @@ interface AspectWeights {
   preferredSkills: number
   companyOverview: number
 }
+
+interface JobViewMatchPayload {
+  jdId: number;
+  additionalSkills: Record<string, number>;
+  // Add aspect weights here if the backend DTO was updated to include them
+  // aspectWeights?: Record<string, number>;
+}
+export interface DisplayCandidate extends CvViewDTO {
+  matchScore: number;
+  explanation?: Record<string, string>; // Optional: if you plan to use it
+}
+
 
 @Component({
   selector: "app-job-matcher",
@@ -51,6 +65,20 @@ interface AspectWeights {
   templateUrl: "./job-matcher.component.html",
   styleUrls: ["./job-matcher.component.css"],
 })
+
+export interface CvViewDTO {
+  name: string;
+  skills: string[] | null;
+  languages: string[] | null;
+  education: string | null;
+}
+
+export interface CvMatchResponseDTO {
+  score: number;
+  explanation: Record<string, string>;
+  cvViewDTO: CvViewDTO | null;
+}
+
 export class JobMatcherComponent implements OnInit {
   selectedJob: Job | null = null
   matchingCandidates: Candidate[] = []
@@ -72,6 +100,8 @@ export class JobMatcherComponent implements OnInit {
     companyOverview: 25,
   }
   isAdjustingAspects = false
+
+
 
   constructor(
     private jobService: JobService,
@@ -104,42 +134,63 @@ export class JobMatcherComponent implements OnInit {
     this.findMatches()
   }
 
+  // *** MODIFIED findMatches function ***
   findMatches() {
-    this.loadingCandidates = true
-    this.error = null
+    this.loadingCandidates = true;
+    this.error = null;
 
-    // Convert skill weights (DOAR cele adăugate de utilizator) to the format expected by the API
-    const skillWeightsObj = this.skillWeights.reduce(
-      (obj, item) => {
-        obj[item.name] = item.weight
-        return obj
+    // 1. Check if a job is selected and has an ID
+    if (!this.selectedJob || this.selectedJob.id === undefined || this.selectedJob.id === null) {
+      console.error("Cannot find matches: No job selected or job ID is missing.");
+      this.loadingCandidates = false;
+      this.error = "No job selected or its ID is missing. Please go back and select a job.";
+      return;
+    }
+
+    // 2. Convert the user-defined skill weights (skillWeights array)
+    //    into the format expected by the backend DTO (additionalSkills)
+    const additionalSkillsMap: Record<string, number> = this.skillWeights.reduce(
+      (map, skill) => {
+        map[skill.name] = Math.round(skill.weight);
+        return map;
       },
-      {} as Record<string, number>,
-    )
+      {} as Record<string, number>
+    );
 
-    // In a real app, you would pass the skill weights to the backend
-    // Backend-ul trebuie să gestioneze cazul în care skillWeightsObj este gol
-    this.matchingService.findMatchingCandidates(this.selectedJob!, skillWeightsObj).subscribe({
+    // 3. Construct the payload object matching the backend's JobViewMatchDTO structure
+    const requestPayload: JobViewMatchPayload = {
+      jdId: this.selectedJob.id, // Use the job ID
+      additionalSkills: additionalSkillsMap, // Use the skills map with the correct key name
+      // Add aspect weights here if the backend DTO and frontend interface were updated
+      // aspectWeights: this.aspectWeights // Assuming aspectWeights is Record<string, number> or similar
+    };
+
+    console.log("Component: Sending JSON Body Payload to Service:", JSON.stringify(requestPayload, null, 2)); // For debugging
+
+    // 4. Call the matching service with the new payload object.
+    //    The MatchingService.findMatchingCandidates method needs to accept
+    //    the JobViewMatchPayload interface.
+    this.matchingService.findMatchingCandidates(requestPayload).subscribe({ // <-- Pass the new payload
       next: (candidates) => {
         if (candidates && Array.isArray(candidates)) {
-          this.matchingCandidates = candidates
-          this.totalRecords = candidates.length
+          this.matchingCandidates = candidates;
+          this.totalRecords = candidates.length;
         } else {
-          console.error("Invalid candidates data format:", candidates)
-          this.error = "Received invalid data format from server"
-          this.matchingCandidates = []
-          this.totalRecords = 0
+          console.error("Invalid candidates data format received:", candidates);
+          this.error = "Received invalid data format from the server.";
+          this.matchingCandidates = [];
+          this.totalRecords = 0;
         }
-        this.loadingCandidates = false
+        this.loadingCandidates = false;
       },
       error: (err) => {
-        console.error("Error finding matches:", err)
-        this.error = "Failed to find matching candidates. Please try again."
-        this.loadingCandidates = false
-        this.matchingCandidates = []
-        this.totalRecords = 0
+        console.error("Error finding matches:", err);
+        this.error = `Failed to find matching candidates: ${err.message || 'Please try again.'}`;
+        this.loadingCandidates = false;
+        this.matchingCandidates = [];
+        this.totalRecords = 0;
       },
-    })
+    });
   }
 
   // Add a method to toggle the locked state of a skill

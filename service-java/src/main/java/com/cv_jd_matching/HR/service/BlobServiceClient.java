@@ -65,6 +65,19 @@ public class BlobServiceClient {
     }
 
 
+    private void validateExtractedNameForComma(String extractedName) throws InvalidFileFormatException {
+        if (extractedName == null) {
+
+            throw new IllegalArgumentException("Internal error: extractedName cannot be null for validation.");
+        }
+
+        if (extractedName.trim().contains(",")) {
+            throw new InvalidFileFormatException("Could not parse CV, please try again. If the second time it's not working, please try and upload an .docx file.");
+        }
+    }
+
+
+
     @Transactional
     public String uploadCv(MultipartFile file) throws IOException, InvalidFileFormatException {
         BlobContainerClient containerClient = getContainerClient(containerName1);
@@ -83,6 +96,7 @@ public class BlobServiceClient {
             throw new InvalidFileFormatException("Could not extract name from the CV.");
         }
 
+        validateExtractedNameForComma(extractedName.trim());
         String normalizedName = extractedName.trim().replaceAll("[\\s-]+", "_");
 
         Optional<Cv> existingCvOptional = cvRepository.findFirstByFileNameContaining(normalizedName);

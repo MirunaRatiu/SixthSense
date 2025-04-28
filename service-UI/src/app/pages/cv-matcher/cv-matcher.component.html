@@ -85,60 +85,60 @@
   <div class="table-container card" *ngIf="!loadingJobs && !error && matchingJobs.length > 0">
     <table class="jobs-table">
       <thead>
-        <tr>
-          <th class="sortable-col">
-            Position
-            <i class="pi pi-sort"></i>
-          </th>
-          <th class="sortable-col">
-            Company
-            <i class="pi pi-sort"></i>
-          </th>
-          <th class="sortable-col">
-            Required Skills
-            <i class="pi pi-sort"></i>
-          </th>
-          <th class="sortable-col">
-            Match Score
-            <i class="pi pi-sort"></i>
-          </th>
-          <th>Actions</th>
-        </tr>
+      <tr>
+        <th class="sortable-col">
+          Position
+          <i class="pi pi-sort"></i>
+        </th>
+        <th class="sortable-col">
+          Company
+          <i class="pi pi-sort"></i>
+        </th>
+        <th class="sortable-col">
+          Required Skills
+          <i class="pi pi-sort"></i>
+        </th>
+        <th class="sortable-col">
+          Match Score
+          <i class="pi pi-sort"></i>
+        </th>
+        <th>Actions</th>
+      </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let job of matchingJobs">
-          <td>{{ job['jobTitle'] }}</td>
-          <td>
-            <div *ngIf="job['companyOverview']">
-              {{ job['companyOverview'][0] || job['companyOverview'] }}
-            </div>
-          </td>
-          <td>
-            <div class="job-skills">
-              <ng-container *ngIf="job['requiredQualifications'] && job['requiredQualifications'].length">
-                <span *ngFor="let skill of job['requiredQualifications'].slice(0, 3)" class="skill-tag">{{ skill }}</span>
-                <span *ngIf="job['requiredQualifications'].length > 3" class="skill-tag">
-                  +{{ job['requiredQualifications'].length - 3 }}
+      <tr *ngFor="let job of matchingJobs">
+        <td>{{ job.jobTitle }}</td>
+        <td>
+          <div *ngIf="job.companyOverview">
+            {{ Array.isArray(job.companyOverview) ? job.companyOverview[0] : job.companyOverview }}
+          </div>
+        </td>
+        <td>
+          <div class="job-skills">
+            <ng-container *ngIf="job.requiredQualifications && job.requiredQualifications.length">
+              <span *ngFor="let skill of job.requiredQualifications.slice(0, 3)" class="skill-tag">{{ skill }}</span>
+              <span *ngIf="job.requiredQualifications.length > 3" class="skill-tag">
+                  +{{ job.requiredQualifications.length - 3 }}
                 </span>
-              </ng-container>
-              <span *ngIf="!job['requiredQualifications'] || !job['requiredQualifications'].length">No qualifications listed</span>
-            </div>
-          </td>
-          <td>
-            <div class="match-score-container">
-              <div class="match-score-bar" [style.width.%]="job['matchScore']"></div>
-              <span class="match-score-value" [ngClass]="getMatchScoreClass(job['matchScore'])">{{ job['matchScore'] }}%</span>
-            </div>
-          </td>
-          <td>
-            <button class="btn btn-sm btn-outline">
-              <i class="pi pi-eye"></i> View
-            </button>
-            <button class="btn btn-sm btn-primary">
-              <i class="pi pi-send"></i> Apply
-            </button>
-          </td>
-        </tr>
+            </ng-container>
+            <span *ngIf="!job.requiredQualifications || !job.requiredQualifications.length">No qualifications listed</span>
+          </div>
+        </td>
+        <td>
+          <div class="match-score-container">
+            <div class="match-score-bar" [style.width.%]="job.score"></div>
+            <span class="match-score-value" [ngClass]="getMatchScoreClass(job.score)">{{ job.score }}%</span>
+          </div>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-outline">
+            <i class="pi pi-eye"></i> View
+          </button>
+          <button class="btn btn-sm btn-primary">
+            <i class="pi pi-send"></i> Apply
+          </button>
+        </td>
+      </tr>
       </tbody>
     </table>
   </div>
