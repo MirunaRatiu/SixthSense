@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,4 +18,8 @@ public class JobDescriptionViewDTO {
     private String companyOverview;
     private String requiredQualifications;
     private String jobDepartment;
+
+    private String keyResponsabilities;
+    private List<String> preferredSkills;
+
 }

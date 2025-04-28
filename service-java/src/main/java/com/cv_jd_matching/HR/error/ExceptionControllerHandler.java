@@ -33,6 +33,11 @@ public class ExceptionControllerHandler {
         LOGGER.error(exception.getMessage());
         return createHttpResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<HttpErrorResponse> handleRuntimeException(RuntimeException ex) {
+        LOGGER.error(ex.getMessage());
+        return createHttpResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
 
     private ResponseEntity<HttpErrorResponse> createHttpResponse(HttpStatus httpStatus, String message){
         HttpErrorResponse httpErrorResponse = HttpErrorResponse.builder()

@@ -55,6 +55,11 @@ public class MatchingClientImpl implements MatchingClient{
                 .uri("/match/aux")
                 .bodyValue(requestDTO)
                 .retrieve()
+                .onStatus(
+                        httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> Mono.error(new RuntimeException("Backend error: " + errorBody)))
+                )
                 .bodyToMono(MatchResponseDTO.class);
     }
 
@@ -63,7 +68,13 @@ public class MatchingClientImpl implements MatchingClient{
                 .uri("/embed/jd")
                 .bodyValue(jobDescriptionDTO)
                 .retrieve()
-                .bodyToMono(String.class);
+                .onStatus(
+                        httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> Mono.error(new RuntimeException("Backend error: " + errorBody)))
+                )
+                .bodyToMono(String.class)
+                .onErrorResume(e -> Mono.just("Error: " + e.getMessage()));
     }
 
     public Mono<String> embedCv(CvDTO cvDTO){
@@ -71,7 +82,13 @@ public class MatchingClientImpl implements MatchingClient{
                 .uri("/embed/cv")
                 .bodyValue(cvDTO)
                 .retrieve()
-                .bodyToMono(String.class);
+                .onStatus(
+                        httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> Mono.error(new RuntimeException("Backend error: " + errorBody)))
+                )
+                .bodyToMono(String.class)
+                .onErrorResume(e -> Mono.just("Error: " + e.getMessage()));
     }
 
     public List<JobMatchResponseDTO> matchCv(Integer cvId) {
@@ -84,16 +101,20 @@ public class MatchingClientImpl implements MatchingClient{
                 .uri("/match/cv")
                 .bodyValue(cvMatchRequestDTO)
                 .retrieve()
+                .onStatus(
+                        httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> Mono.error(new RuntimeException("Backend error: " + errorBody)))
+                )
                 .bodyToFlux(MatchResponseDTO.class)
                 .collectList()
                 .block();
         return result.stream()
                 .map(matchResponseDTO -> {
-                    try {
-                        return matchResponseMapper.mapMatchToJobDTO(matchResponseDTO);
-                    } catch (InputException e) {
-                        throw new RuntimeException(e);
-                    }
+                    JobDescription jobDescription = jobDescriptionRepository.findById(matchResponseDTO.getId())
+                            .orElseThrow(() -> new RuntimeException(new InputException("The Job Description with id " + matchResponseDTO.getId() + " was not found.")));
+                    JobDescriptionViewDTO jobDescriptionViewDTO = JobDescriptionMapper.mapEntityToViewDTO(jobDescription);
+                    return MatchResponseMapper.mapMatchToJobDTO(matchResponseDTO, jobDescriptionViewDTO);
                 })
                 .collect(Collectors.toList());
     }
@@ -113,16 +134,20 @@ public class MatchingClientImpl implements MatchingClient{
                 .uri("/match/jd")
                 .bodyValue(jobMatchRequestDTO)
                 .retrieve()
+                .onStatus(
+                        httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> Mono.error(new RuntimeException("Backend error: " + errorBody)))
+                )
                 .bodyToFlux(MatchResponseDTO.class)
                 .collectList()
                 .block();
         return result.stream()
                 .map(matchResponseDTO -> {
-                    try {
-                        return matchResponseMapper.mapMatchToCVDTO(matchResponseDTO);
-                    } catch (InputException e) {
-                        throw new RuntimeException(e);
-                    }
+                    Cv cv = cvRepository.findById(matchResponseDTO.getId())
+                            .orElseThrow(() -> new RuntimeException(new InputException("The CV with id " + matchResponseDTO.getId() + " was not found.")));
+                    CvViewDTO cvViewDTO = CvMapper.mapEntityToViewDTO(cv);
+                    return MatchResponseMapper.mapMatchToCVDTO(matchResponseDTO, cvViewDTO);
                 })
                 .collect(Collectors.toList());
     }
@@ -133,7 +158,13 @@ public class MatchingClientImpl implements MatchingClient{
                         .path("/delete/cv/{item_id}")
                         .build(cvId))
                 .retrieve()
-                .bodyToMono(String.class);
+                .onStatus(
+                        httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> Mono.error(new RuntimeException("Backend error: " + errorBody)))
+                )
+                .bodyToMono(String.class)
+                .onErrorResume(e -> Mono.just("Error: " + e.getMessage()));
     }
 
     public Mono<String> deleteJobDescription(Integer jdId) {
@@ -142,6 +173,12 @@ public class MatchingClientImpl implements MatchingClient{
                         .path("/delete/jd/{item_id}")
                         .build(jdId))
                 .retrieve()
-                .bodyToMono(String.class);
+                .onStatus(
+                        httpStatus -> httpStatus.is4xxClientError() || httpStatus.is5xxServerError(),
+                        clientResponse -> clientResponse.bodyToMono(String.class)
+                                .flatMap(errorBody -> Mono.error(new RuntimeException("Backend error: " + errorBody)))
+                )
+                .bodyToMono(String.class)
+                .onErrorResume(e -> Mono.just("Error: " + e.getMessage()));
     }
 }

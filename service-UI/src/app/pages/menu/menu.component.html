@@ -1,0 +1,142 @@
+<div class="page-container">
+    <div class="page-header">
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">Welcome to TalentMatch, your recruitment management platform</p>
+    </div>
+  
+    <div class="grid">
+      <!-- Stats Row -->
+      <div class="col-12 md:col-4">
+        <div class="stat-card">
+          <div class="stat-title">Active Jobs</div>
+          <div class="stat-value">24</div>
+          <div class="stat-progress">
+            <p-progressBar [value]="jobsProgress" [showValue]="false"></p-progressBar>
+          </div>
+          <div class="stat-footer">
+            <div class="stat-trend positive">
+              <i class="pi pi-arrow-up"></i>
+              <span>12%</span>
+            </div>
+            <div class="stat-period">vs last month</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-12 md:col-4">
+        <div class="stat-card">
+          <div class="stat-title">Candidates</div>
+          <div class="stat-value">156</div>
+          <div class="stat-progress">
+            <p-progressBar [value]="candidatesProgress" [showValue]="false"></p-progressBar>
+          </div>
+          <div class="stat-footer">
+            <div class="stat-trend positive">
+              <i class="pi pi-arrow-up"></i>
+              <span>8%</span>
+            </div>
+            <div class="stat-period">vs last month</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-12 md:col-4">
+        <div class="stat-card">
+          <div class="stat-title">Interviews</div>
+          <div class="stat-value">42</div>
+          <div class="stat-progress">
+            <p-progressBar [value]="interviewsProgress" [showValue]="false"></p-progressBar>
+          </div>
+          <div class="stat-footer">
+            <div class="stat-trend negative">
+              <i class="pi pi-arrow-down"></i>
+              <span>3%</span>
+            </div>
+            <div class="stat-period">vs last month</div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Chart -->
+      <div class="col-12 lg:col-8">
+        <p-card styleClass="dashboard-card" header="Recruitment Activity" subheader="Jobs and applications over time">
+          <p-chart type="line" [data]="chartData" [options]="chartOptions" height="320px"></p-chart>
+        </p-card>
+      </div>
+  
+      <!-- Recent Jobs -->
+      <div class="col-12 lg:col-4">
+        <p-card styleClass="dashboard-card" header="Recent Jobs">
+          <ng-template pTemplate="content">
+            <div *ngFor="let job of recentJobs" class="job-item">
+              <div class="job-logo">
+                <img [src]="job.logo" [alt]="job.company" width="32" height="32" />
+              </div>
+              <div class="job-info">
+                <div class="job-title">{{ job.title }}</div>
+                <div class="job-company">{{ job.company }}</div>
+              </div>
+              <p-tag [value]="job.status" [severity]="getStatusSeverity(job.status)"></p-tag>
+            </div>
+          </ng-template>
+          <ng-template pTemplate="footer">
+            <button pButton label="View All Jobs" icon="pi pi-arrow-right" iconPos="right" class="p-button-text"></button>
+          </ng-template>
+        </p-card>
+      </div>
+  
+      <!-- Top Candidates -->
+      <div class="col-12 lg:col-4">
+        <p-card styleClass="dashboard-card" header="Top Candidates">
+          <ng-template pTemplate="content">
+            <div *ngFor="let candidate of topCandidates" class="candidate-item">
+              <p-avatar [image]="candidate.avatar" shape="circle"></p-avatar>
+              <div class="candidate-info">
+                <div class="candidate-name">{{ candidate.name }}</div>
+                <div class="candidate-role">{{ candidate.role }}</div>
+              </div>
+              <div class="match-score">{{ candidate.matchScore }}%</div>
+            </div>
+          </ng-template>
+          <ng-template pTemplate="footer">
+            <button pButton label="View All Candidates" icon="pi pi-arrow-right" iconPos="right" class="p-button-text"></button>
+          </ng-template>
+        </p-card>
+      </div>
+  
+      <!-- Quick Actions -->
+      <div class="col-12 lg:col-8">
+        <div class="grid">
+          <div class="col-6 md:col-3">
+            <div class="menu-card" routerLink="/jobs">
+              <i class="pi pi-briefcase menu-icon"></i>
+              <div class="menu-title">Jobs</div>
+              <div class="menu-description">Manage job listings</div>
+            </div>
+          </div>
+          <div class="col-6 md:col-3">
+            <div class="menu-card" routerLink="/candidates">
+              <i class="pi pi-users menu-icon"></i>
+              <div class="menu-title">Candidates</div>
+              <div class="menu-description">View candidate profiles</div>
+            </div>
+          </div>
+          <div class="col-6 md:col-3">
+            <div class="menu-card" routerLink="/job-matcher">
+              <i class="pi pi-search menu-icon"></i>
+              <div class="menu-title">Job Matcher</div>
+              <div class="menu-description">Find matching candidates</div>
+            </div>
+          </div>
+          <div class="col-6 md:col-3">
+            <div class="menu-card" routerLink="/cv-matcher">
+              <i class="pi pi-file menu-icon"></i>
+              <div class="menu-title">CV Matcher</div>
+              <div class="menu-description">Match CVs to jobs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  

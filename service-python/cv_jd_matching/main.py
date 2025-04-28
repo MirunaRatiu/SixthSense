@@ -14,6 +14,9 @@ from matching_logic.modified_match import get_match_score
 from my_utils.generate_related_words import extract_industry_keywords
 from my_utils.embed_cv import embed_sections_cv
 
+from dotenv import load_dotenv
+load_dotenv()
+
 chroma_client = chromadb.PersistentClient(path="./chroma_data")
 cv_collection_concat = chroma_client.get_or_create_collection(name="cv_embeddings_concatenated")
 jd_collection_industry_keyw = chroma_client.get_or_create_collection(name="jd_industry_keywords")
@@ -108,9 +111,18 @@ async def matchJd(request: JobMatchRequest):
         await condition.wait_for(lambda: embedding_counter == 0)
 
     try:
-        transformed_jd = transform_dto_to_jd(request.jd.model_dump())
+        # Check if the job description exists in the database
         job_id = request.jd.id
-        industry_keywords = json.loads(jd_collection_industry_keyw.get(ids=[f"{job_id}"], include=["documents"])["documents"][0])
+        jd_document = jd_collection_industry_keyw.get(ids=[f"{job_id}"], include=["documents"])
+
+        # If the job description is not found, return a 404 with a custom message
+        if not jd_document.get("documents"):
+            raise HTTPException(status_code=404, detail=f"Job description with ID {job_id} not found in the database.")
+
+        print(job_id)
+        # Proceed with the matching logic if the job description exists
+        transformed_jd = transform_dto_to_jd(request.jd.model_dump())
+        industry_keywords = json.loads(jd_document["documents"][0])
         results = cv_collection_concat.get()
 
         all_ids = results["ids"]
@@ -132,13 +144,16 @@ async def matchJd(request: JobMatchRequest):
 
         top_matches = matches[:20]
 
-        responses = [MatchResponse(score=score, explanation=explanation, id=id) for score, explanation, id in
-                     top_matches]
+        responses = [MatchResponse(score=score, explanation=explanation, id=id) for score, explanation, id in top_matches]
 
         return responses
 
+    except HTTPException as e:
+        # Handle specific HTTP exceptions (like 404)
+        raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # Handle any other unexpected exceptions and return a 500 error
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
 @app.post("/match/cv", response_model=List[MatchResponse])
@@ -149,11 +164,23 @@ async def matchCv(request: CvMatchRequest):
 
     try:
         matches = []
+        cv_document = cv_collection_concat.get(ids=[f"{request.cv}"], include=["documents"])
+        if not cv_document.get("documents"):
+            raise HTTPException(status_code=404, detail=f"CV with ID {request.cv} not found in the database.")
 
         for jobDescription in request.jd:
-            transformed_jd = transform_dto_to_jd(jobDescription.model_dump())
             job_id = jobDescription.id
-            industry_keywords = json.loads(jd_collection_industry_keyw.get(ids=[f"{job_id}"], include=["documents"])["documents"][0])
+            # Check if the job description ID exists in the database
+            jd_document = jd_collection_industry_keyw.get(ids=[f"{job_id}"], include=["documents"])
+
+            # If the job description is not found, return a 404 or a custom message
+            if not jd_document.get("documents"):
+                raise HTTPException(status_code=404, detail=f"Job description with ID {job_id} not found in the database.")
+
+
+            # Continue with the matching process if the job description exists
+            transformed_jd = transform_dto_to_jd(jobDescription.model_dump())
+            industry_keywords = json.loads(jd_document["documents"][0])
             score, explanation = get_match_score(
                 model_sentence_transformer,
                 cv_collection_concat,
@@ -162,7 +189,7 @@ async def matchCv(request: CvMatchRequest):
                 {},
                 industry_keywords
             )
-            matches.append((score, explanation, transformed_jd["id"]))
+            matches.append((score, explanation, jobDescription.id))
 
         matches.sort(key=lambda x: x[0], reverse=True)
 
@@ -172,8 +199,13 @@ async def matchCv(request: CvMatchRequest):
 
         return responses
 
+    except HTTPException as e:
+        # Handle specific HTTP exceptions if needed
+        raise e
     except Exception as e:
-        raise HTTPException(status_code=500,detail=str(e))
+        # Handle other unexpected exceptions
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
 
 
 @app.post("/embed/cv")
@@ -182,8 +214,8 @@ async def embed_cv(request: CvDTO):
     return "success"
 
 @app.post("/embed/jd")
-async def embed_cv(request: JobDescriptionDTO):
-    domain = request["message"]
+async def embed_jd(request: JobDescriptionDTO):
+    domain = request.message
     industry_keywords = extract_industry_keywords(model_genai, domain)
 
     try:
@@ -197,7 +229,6 @@ async def embed_cv(request: JobDescriptionDTO):
         documents=[json.dumps(industry_keywords)]
     )
     return "success"
-
 
 @app.delete("/delete/{item_type}/{item_id}")
 async def delete_by_id(item_type: str, item_id: int):
@@ -215,20 +246,8 @@ async def delete_by_id(item_type: str, item_id: int):
         await condition.wait_for(lambda: embedding_counter == 0)
 
     try:
-        # Get all entries in the collection
-        results = collection.get(include=["metadatas"])
 
-        # Filter IDs where metadata.id == item_id
-        ids_to_delete = [
-            entry_id for entry_id, metadata in zip(results["ids"], results["metadatas"])
-            if metadata.get("id") == item_id
-        ]
-
-        if not ids_to_delete:
-            raise HTTPException(status_code=404, detail=f"No entries found for ID {item_id}")
-
-        # Delete the matching IDs
-        collection.delete(ids=ids_to_delete)
+        collection.delete(ids=[f"{item_id}"])
 
         return "Success"
 
@@ -241,4 +260,3 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="127.0.0.1", port=8081)
-

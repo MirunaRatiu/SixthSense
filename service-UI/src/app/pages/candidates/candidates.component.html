@@ -1,0 +1,212 @@
+<div class="candidates-page animate-fadeIn">
+  <!-- Header with title and notification badge -->
+  <div class="page-header">
+    <div class="title-section">
+      <h1>Candidates <span class="notification-badge" data-count="1"></span></h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-danger" [disabled]="!hasSelectedCandidates()" (click)="deleteSelectedCandidates()">
+        <i class="pi pi-trash"></i> Delete Selected
+      </button>
+    </div>
+  </div>
+
+  <!-- CV Upload Area -->
+  <div class="upload-area"
+       [class.active]="isDragOver"
+       (dragover)="onDragOver($event)"
+       (dragleave)="onDragLeave($event)"
+       (drop)="onDrop($event)">
+    <div class="upload-content">
+      <i class="pi pi-cloud-upload upload-icon"></i>
+      <h3 class="upload-title">Upload CV Files</h3>
+      <p class="upload-hint">Drag & drop your CV files here or click to browse</p>
+      <input type="file"
+             #fileInput
+             multiple
+             accept=".pdf,.doc,.docx"
+             class="file-input"
+             (change)="onFileSelected($event)">
+      <button class="btn btn-primary upload-btn" (click)="fileInput.click()">
+        <i class="pi pi-upload"></i> Browse Files
+      </button>
+    </div>
+  </div>
+
+  <!-- Uploaded Files Preview -->
+  <div class="uploaded-files" *ngIf="uploadedFiles.length > 0">
+    <h3 class="section-title">Files Ready to Upload</h3>
+    <div class="files-grid">
+      <div class="file-card" *ngFor="let file of uploadedFiles; let i = index">
+        <div class="file-icon">
+          <i class="pi" [ngClass]="getFileIcon(file)"></i>
+        </div>
+        <div class="file-info">
+          <div class="file-name">{{ file.name }}</div>
+          <div class="file-size">{{ formatFileSize(file.size) }}</div>
+        </div>
+        <button class="file-remove" (click)="removeFile(i)">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    </div>
+    <div class="upload-actions">
+      <button class="btn btn-success" [disabled]="isUploading" (click)="processFiles()">
+        <i class="pi" [ngClass]="isUploading ? 'pi-spinner pi-spin' : 'pi-check'"></i>
+        {{ isUploading ? 'Uploading...' : 'Upload CVs' }}
+      </button>
+      <button class="btn btn-outline" [disabled]="isUploading" (click)="clearFiles()">
+        <i class="pi pi-trash"></i> Clear All
+      </button>
+    </div>
+  </div>
+
+  <!-- Upload Progress -->
+  <div *ngIf="isUploading" class="upload-progress">
+    <div class="progress-container">
+      <div class="progress-bar" [style.width.%]="progress"></div>
+    </div>
+    <p class="progress-text">Uploading {{ currentFile?.name }} - {{ progress }}%</p>
+  </div>
+
+  <!-- Upload Results -->
+  <div *ngIf="fileInfos.length > 0" class="upload-results">
+    <h3 class="section-title">Upload Results</h3>
+    <div class="results-list">
+      <div *ngFor="let info of fileInfos" class="result-item" [ngClass]="info.status === 'Success' ? 'success' : 'error'">
+        <i class="pi" [ngClass]="info.status === 'Success' ? 'pi-check-circle' : 'pi-times-circle'"></i>
+        <div class="result-details">
+          <div class="result-name">{{ info.name }}</div>
+          <div *ngIf="info.status === 'Success'" class="result-url">{{ info.url }}</div>
+          <div *ngIf="info.status === 'Failed'" class="result-error">{{ info.error }}</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-outline" (click)="fileInfos = []">
+      <i class="pi pi-times"></i> Clear Results
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading candidates...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-container">
+    <i class="pi pi-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" (click)="loadCandidates()">Try Again</button>
+  </div>
+
+  <!-- Candidates table -->
+  <div class="table-container card" *ngIf="!loading && !error">
+    <table class="candidates-table">
+      <thead>
+        <tr>
+          <th class="checkbox-col">
+            <div class="custom-checkbox" [class.checked]="allSelected" (click)="toggleSelectAll()"></div>
+          </th>
+          <th class="sortable-col">
+            Name
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Skills
+            <i class="pi pi-sort"></i>
+          </th>
+
+          <th class="sortable-col">
+            Languages
+            <i class="pi pi-sort"></i>
+          </th>
+          <th class="sortable-col">
+            Experience
+            <i class="pi pi-sort"></i>
+          </th>
+
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let candidate of candidates; let i = index" (click)="viewCvInViewer(candidate)" class="clickable-row">
+          <td class="checkbox-col" (click)="$event.stopPropagation()">
+            <div class="custom-checkbox"
+                 [class.checked]="candidate.selected"
+                 (click)="toggleCandidateSelection(i)"></div>
+          </td>
+          <td class="name-col">
+            <div class="candidate-info">
+              <div class="candidate-name">{{ candidate.name }}</div>
+            </div>
+          </td>
+          <td>
+            <div class="candidate-skills">
+              <span *ngFor="let skill of candidate.skills?.slice(0, 3)" class="skill-tag">{{ skill }}</span>
+              <span *ngIf="candidate.skills && candidate.skills.length > 3" class="skill-tag">+{{ candidate.skills.length - 3 }}</span>
+            </div>
+          </td>
+
+          <td>
+            <div class="candidate-skills">
+              <span *ngFor="let lang of candidate.languages?.slice(0, 2)" class="skill-tag">{{ lang }}</span>
+              <span *ngIf="candidate.languages && candidate.languages.length > 2" class="skill-tag">+{{ candidate.languages.length - 2 }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="getExperienceLevelClass(getExperienceLevel(candidate))">
+              {{ getExperienceLevel(candidate) }}
+            </span>
+          </td>
+
+          <td>
+            <button class="btn btn-sm btn-outline"
+                    (click)="$event.stopPropagation(); viewCvInViewer(candidate)"
+                    [disabled]="!candidate.accessLink || viewLoading[candidate.id]"
+                    title="{{ candidate.accessLink ? 'View CV in new tab' : 'No CV available' }}">
+              <i class="pi" [ngClass]="viewLoading[candidate.id] ? 'pi-spin pi-spinner' : 'pi-eye'"></i>
+              {{ viewLoading[candidate.id] ? 'Loading...' : 'View' }}
+            </button>
+            <button class="btn btn-sm btn-primary" (click)="$event.stopPropagation(); viewCandidateMatches(candidate)">
+              <i class="pi pi-search"></i> Find Jobs
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="!loading && !error">
+    <div class="pagination-info">
+      <span>Results per page:</span>
+      <select [(ngModel)]="rows" (change)="onRowsChange()">
+        <option [value]="10">10</option>
+        <option [value]="20">20</option>
+        <option [value]="50">50</option>
+      </select>
+      <span>1-{{ candidates.length > rows ? rows : candidates.length }} of {{ totalRecords }}</span>
+    </div>
+    <div class="pagination-controls">
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-double-left"></i>
+      </button>
+      <button class="pagination-btn" disabled>
+        <i class="pi pi-angle-left"></i>
+      </button>
+      <button class="pagination-btn active">1</button>
+      <button class="pagination-btn">2</button>
+      <button class="pagination-btn">3</button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-right"></i>
+      </button>
+      <button class="pagination-btn">
+        <i class="pi pi-angle-double-right"></i>
+      </button>
+    </div>
+    <div class="total-records">
+      {{ totalRecords }} total candidates
+    </div>
+  </div>
+</div>
