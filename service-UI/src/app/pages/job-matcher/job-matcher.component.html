@@ -249,40 +249,40 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let candidate of matchingCandidates">
-          <td>{{ candidate.name }}</td>
-          <td>
-            <div class="candidate-skills">
-              <span *ngFor="let skill of candidate.skills.slice(0, 3)" class="skill-tag">{{ skill }}</span>
-              <span *ngIf="candidate.skills.length > 3" class="skill-tag">+{{ candidate.skills.length - 3 }}</span>
-            </div>
-          </td>
-          <td>{{ candidate.education }}</td>
-          <td>
-            <div class="candidate-skills">
-              <span *ngFor="let lang of (candidate.languages || candidate.languages || []).slice(0, 2)" class="skill-tag">{{ lang }}</span>
-              <span *ngIf="(candidate.languages || candidate.languages || []).length > 2" class="skill-tag">+{{ (candidate.languages || candidate.languages || []).length - 2 }}</span>
-            </div>
-          </td>
-          <td>
-            <div class="match-score-container">
-              <div class="match-score-bar" [style.width.%]="candidate.matchScore"></div>
-              <span class="match-score-value" [ngClass]="{
-                'match-score-high': candidate.matchScore >= 80,
-                'match-score-medium': candidate.matchScore >= 60 && candidate.matchScore < 80,
-                'match-score-low': candidate.matchScore < 60
-              }">{{ candidate.matchScore }}%</span>
-            </div>
-          </td>
-          <td>
-            <button class="btn btn-sm btn-outline">
-              <i class="pi pi-eye"></i> View
-            </button>
-            <button class="btn btn-sm btn-primary">
-              <i class="pi pi-envelope"></i> Contact
-            </button>
-          </td>
-        </tr>
+      <tr *ngFor="let candidate of matchingCandidates">
+        <td>{{ candidate.name }}</td>
+        <td>
+          <div class="candidate-skills">
+            <span *ngFor="let skill of (candidate.skills || []) | slice:0:1" class="skill-tag">{{ skill }}</span>
+            <span *ngIf="(candidate.skills || []).length > 1" class="skill-tag">+{{ (candidate.skills || []).length - 1 }}</span>
+          </div>
+        </td>
+        <td>{{ candidate.education }}</td>
+        <td>
+          <div class="candidate-skills">
+            <span *ngFor="let lang of (candidate.languages || []) | slice:0:2" class="skill-tag">{{ lang }}</span>
+            <span *ngIf="(candidate.languages || []).length > 2" class="skill-tag">+{{ (candidate.languages || []).length - 2 }}</span>
+          </div>
+        </td>
+        <td>
+          <div class="match-score-container">
+            <div class="match-score-bar" [style.width.%]="candidate.matchScore"></div>
+            <span class="match-score-value" [ngClass]="{
+              'match-score-high': candidate.matchScore >= 80,
+              'match-score-medium': candidate.matchScore >= 60 && candidate.matchScore < 80,
+              'match-score-low': candidate.matchScore < 60
+            }">{{ candidate.matchScore }}%</span>
+          </div>
+        </td>
+        <td>
+          <button class="btn btn-sm btn-outline">
+            <i class="pi pi-eye"></i> View
+          </button>
+          <button class="btn btn-sm btn-primary">
+            <i class="pi pi-envelope"></i> Contact
+          </button>
+        </td>
+      </tr>
       </tbody>
     </table>
   </div>
