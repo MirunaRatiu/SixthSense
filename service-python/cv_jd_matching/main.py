@@ -14,6 +14,9 @@ from matching_logic.modified_match import get_match_score
 from my_utils.generate_related_words import extract_industry_keywords
 from my_utils.embed_cv import embed_sections_cv
 
+from dotenv import load_dotenv
+load_dotenv()
+
 chroma_client = chromadb.PersistentClient(path="./chroma_data")
 cv_collection_concat = chroma_client.get_or_create_collection(name="cv_embeddings_concatenated")
 jd_collection_industry_keyw = chroma_client.get_or_create_collection(name="jd_industry_keywords")
@@ -162,7 +165,7 @@ async def matchCv(request: CvMatchRequest):
                 {},
                 industry_keywords
             )
-            matches.append((score, explanation, transformed_jd["id"]))
+            matches.append((score, explanation, jobDescription.id))
 
         matches.sort(key=lambda x: x[0], reverse=True)
 
@@ -182,8 +185,8 @@ async def embed_cv(request: CvDTO):
     return "success"
 
 @app.post("/embed/jd")
-async def embed_cv(request: JobDescriptionDTO):
-    domain = request["message"]
+async def embed_jd(request: JobDescriptionDTO):
+    domain = request.message
     industry_keywords = extract_industry_keywords(model_genai, domain)
 
     try:
@@ -197,7 +200,6 @@ async def embed_cv(request: JobDescriptionDTO):
         documents=[json.dumps(industry_keywords)]
     )
     return "success"
-
 
 @app.delete("/delete/{item_type}/{item_id}")
 async def delete_by_id(item_type: str, item_id: int):
@@ -215,20 +217,8 @@ async def delete_by_id(item_type: str, item_id: int):
         await condition.wait_for(lambda: embedding_counter == 0)
 
     try:
-        # Get all entries in the collection
-        results = collection.get(include=["metadatas"])
 
-        # Filter IDs where metadata.id == item_id
-        ids_to_delete = [
-            entry_id for entry_id, metadata in zip(results["ids"], results["metadatas"])
-            if metadata.get("id") == item_id
-        ]
-
-        if not ids_to_delete:
-            raise HTTPException(status_code=404, detail=f"No entries found for ID {item_id}")
-
-        # Delete the matching IDs
-        collection.delete(ids=ids_to_delete)
+        collection.delete(ids=[f"{item_id}"])
 
         return "Success"
 
