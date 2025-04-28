@@ -110,7 +110,6 @@ export class JobMatcherComponent implements OnInit {
         }
       })
     }
-
     this.findMatches()
   }
 
