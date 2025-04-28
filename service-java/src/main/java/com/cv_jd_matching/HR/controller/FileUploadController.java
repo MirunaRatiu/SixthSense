@@ -4,6 +4,7 @@ import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.JobDescriptionDTO;
 import com.cv_jd_matching.HR.entity.JobDescription;
 import com.cv_jd_matching.HR.error.InvalidFileFormatException;
+import com.cv_jd_matching.HR.error.PathException;
 import com.cv_jd_matching.HR.service.CvService;
 import com.cv_jd_matching.HR.service.JobDescriptionService;
 import com.cv_jd_matching.HR.service.MatchingClient;
@@ -55,6 +56,35 @@ public class FileUploadController {
         }
     }
 
+    @PostMapping("/upload-multiple-cvs")
+    @ResponseBody
+    public String uploadMultipleCvs(@RequestParam("file") MultipartFile[] files) {
+        try {
+            StringBuilder uploadedUrls = new StringBuilder();
+            uploadedUrls.append("[");
+
+            for (int i = 0; i < files.length; i++) {
+                MultipartFile file = files[i];
+                String uploadedCvUrl = blobServiceClient.uploadCv(file);
+                uploadedUrls.append("\"").append(uploadedCvUrl).append("\"");
+                if (i != files.length - 1) {
+                    uploadedUrls.append(", ");
+                }
+            }
+
+            uploadedUrls.append("]");
+            return "{\"message\": \"CVs uploaded successfully. URLs: " + uploadedUrls.toString() + "\"}";
+        } catch (MultipartException e) {
+            return "{\"error\": \"Invalid multipart request: " + e.getMessage() + "\"}";
+        } catch (IOException e) {
+            return "{\"error\": \"Error uploading a CV: " + e.getMessage() + "\"}";
+        } catch (InvalidFileFormatException e) {
+            return "{\"error\": \"Error processing a CV: " + e.getMessage() + "\"}";
+        } catch (Exception e) {
+            return "{\"error\": \"An unexpected error occurred: " + e.getMessage() + "\"}";
+        }
+    }
+
 
     @PostMapping("/upload-jobDescription")
     @ResponseBody
@@ -74,4 +104,32 @@ public class FileUploadController {
             return "{\"error\": \"An unexpected error occurred during Job Description upload: " + e.getMessage() + "\"}";
         }
     }
+
+    @PostMapping("/upload-multiple-jobDescriptions")
+    @ResponseBody
+    public String uploadMultipleJobDescriptions(@RequestParam("file") MultipartFile[] files) {
+        try {
+            StringBuilder uploadedUrls = new StringBuilder();
+            uploadedUrls.append("[");
+
+            for (int i = 0; i < files.length; i++) {
+                MultipartFile file = files[i];
+                String uploadedJobDescriptionUrl = blobServiceClient.uploadJobDescription(file);
+                uploadedUrls.append("\"").append(uploadedJobDescriptionUrl).append("\"");
+                if (i != files.length - 1) {
+                    uploadedUrls.append(", ");
+                }
+            }
+
+            uploadedUrls.append("]");
+            return "{\"message\": \"Job Descriptions uploaded successfully. URLs: " + uploadedUrls.toString() + "\"}";
+        } catch (IOException e) {
+            return "{\"error\": \"Error uploading a Job Description: " + e.getMessage() + "\"}";
+        } catch (InvalidFileFormatException e) {
+            return "{\"error\": \"Invalid file format for Job Description: " + e.getMessage() + "\"}";
+        } catch (Exception e) {
+            return "{\"error\": \"An unexpected error occurred during Job Description upload: " + e.getMessage() + "\"}";
+        }
+    }
+
 }

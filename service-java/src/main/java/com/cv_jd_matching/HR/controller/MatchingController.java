@@ -1,5 +1,7 @@
 package com.cv_jd_matching.HR.controller;
 
+import com.cv_jd_matching.HR.error.InputException;
+import com.cv_jd_matching.HR.error.WrongWeightsException;
 import com.cv_jd_matching.HR.service.MatchingClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,19 +23,18 @@ public class MatchingController {
     private final MatchingClient matchingClient;
 
     @RequestMapping(method = RequestMethod.POST, value = "/match")
-    public ResponseEntity<?> displayMatchScore(@RequestParam("cvId") Integer cvId, @RequestParam("jdId") Integer jobDescriptionId){
+    public ResponseEntity<?> displayMatchScore(@RequestParam("cvId") Integer cvId, @RequestParam("jdId") Integer jobDescriptionId) throws InputException {
         return new ResponseEntity<>(matchingClient.match(cvId, jobDescriptionId).block(), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/match/cv")
     public ResponseEntity<?> displayMatchScoreForCV(@RequestParam("cvId") Integer cvId){
-        return new ResponseEntity<>(matchingClient.matchCv(cvId).block(), HttpStatus.OK);
+        return new ResponseEntity<>(matchingClient.matchCv(cvId), HttpStatus.OK);
     }
 
     @RequestMapping(method = RequestMethod.POST, value = "/match/jd")
-    public ResponseEntity<?> displayMatchScoreForJobDescription(@RequestParam("jdId") Integer jdId, @RequestParam("additionalSkills")Map<String, Integer> additionalSkills){
-
-        return new ResponseEntity<>(matchingClient.matchJobDescription(jdId).block(), HttpStatus.OK);
+    public ResponseEntity<?> displayMatchScoreForJobDescription(@RequestParam("jdId") Integer jdId, @RequestParam("additionalSkills")Map<String, Integer> additionalSkills) throws WrongWeightsException, InputException {
+        return new ResponseEntity<>(matchingClient.matchJobDescription(jdId, additionalSkills), HttpStatus.OK);
     }
 
 }

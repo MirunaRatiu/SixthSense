@@ -24,6 +24,10 @@ public interface ICvRepository extends CrudRepository<Cv, Integer> {
     @Query("SELECT c FROM Cv c WHERE c.fileName LIKE CONCAT('%', :normalizedName, '.%')")
     Optional<Cv> findFirstByFileNameContaining(@Param("normalizedName") String normalizedName);
 
+    @Query(value = "SELECT * FROM cv " +
+            "ORDER BY CAST(REGEXP_SUBSTR(file_name, '[0-9]+') AS UNSIGNED) DESC " +
+            "LIMIT 1",
+            nativeQuery = true)
     Optional<Cv> findTopByOrderByFileNameDesc();
 
     Optional<Cv> findCvByPathName(String path);

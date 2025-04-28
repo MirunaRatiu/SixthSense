@@ -3,6 +3,8 @@ package com.cv_jd_matching.HR.service;
 import com.cv_jd_matching.HR.dto.CvDTO;
 import com.cv_jd_matching.HR.dto.CvViewDTO;
 import com.cv_jd_matching.HR.entity.Cv;
+import com.cv_jd_matching.HR.error.InputException;
+import com.cv_jd_matching.HR.error.PathException;
 import com.cv_jd_matching.HR.mapper.CvMapper;
 import com.cv_jd_matching.HR.repository.ICvRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +21,7 @@ import java.util.stream.StreamSupport;
 public class CvServiceImpl implements CvService{
 
     private final ICvRepository cvRepository;
-    private final WebClient webClient;
+    private final MatchingClient matchingClient;
     public List<CvViewDTO> getCvs(){
         Iterable<Cv> cvs = cvRepository.findAll();
         List<Cv> parsed = StreamSupport.stream(cvs.spliterator(), false).toList();
@@ -27,22 +29,31 @@ public class CvServiceImpl implements CvService{
     }
 
     public void deleteFiles(List<Integer> ids){
-        List<Cv> cvs = ids.stream().map(id -> cvRepository.findById(id).get()).toList();
+        List<Cv> cvs = ids.stream()
+                .map(cvRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
         cvRepository.deleteAll(cvs);
-        /*for(Integer id: ids){
-            webClient.method(HttpMethod.DELETE)
-                    .uri("/delete/cv")
-                    .bodyValue(id)
-                    .retrieve()
-                    .bodyToMono(String.class).subscribe();
-        }*/
+        for(Integer id: ids){
+            matchingClient.deleteCv(id).subscribe();
+        }
     }
 
-    public CvDTO getCvByPath(String path){
+    public CvDTO getCvByPath(String path) throws PathException {
         Optional<Cv> cv = cvRepository.findCvByPathName(path);
         if(cv.isEmpty()){
-            throw new RuntimeException("Wrong path");
+            throw new PathException("Wrong path");
         }
         return CvMapper.mapEntityToDTO(cv.get());
+    }
+
+    @Override
+    public CvViewDTO getCvById(Integer id) throws InputException {
+        Optional<Cv> cv = cvRepository.findById(id);
+        if(cv.isEmpty()){
+            throw new InputException("The cv with that id is not saved in the database");
+        }
+        return CvMapper.mapEntityToViewDTO(cv.get());
     }
 }
