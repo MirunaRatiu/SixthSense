@@ -36,7 +36,7 @@
         <div *ngIf="selectedJob.companyOverview">
           <p>{{ selectedJob.companyOverview }}</p>
         </div>
-        
+
         <h3 class="section-title">Job Requirements</h3>
         <div *ngIf="selectedJob.requiredQualifications && selectedJob.requiredQualifications.length > 0">
           <ul class="requirements-list">
@@ -61,14 +61,14 @@
 
         <h3>Desired Skills</h3>
         <div class="skills-list" *ngIf="selectedJob.preferredSkills && selectedJob.preferredSkills.length > 0">
-          <p-chip *ngFor="let skill of selectedJob.preferredSkills" [label]="skill"></p-chip>
+          <p-chip *ngFor="let skill of desiredSkillsFromBackend" [label]="skill"></p-chip>
         </div>
-        <div *ngIf="!selectedJob.preferredSkills || selectedJob.preferredSkills.length === 0">
+        <div *ngIf="!desiredSkillsFromBackend || desiredSkillsFromBackend.length === 0">
           <p>No preferred skills listed for this job.</p>
         </div>
 
       </div>
-      
+
       <div class="job-description-section">
         <h3>Job Description</h3>
         <p>{{ selectedJob.message }}</p>
@@ -86,7 +86,7 @@
   <div class="card skills-card">
     <div class="skills-header">
       <h2>
-        Preferred Skills 
+        Preferred Skills
         <span class="total-weight-indicator" [ngClass]="{'weight-balanced': getTotalWeight() === 100, 'weight-unbalanced': getTotalWeight() !== 100}">
           Total: {{ getTotalWeight() }}%
         </span>
@@ -105,7 +105,7 @@
     </div>
     <div class="skills-content">
       <p class="skills-hint">Adjust the importance of each skill. The total weight will always be 100%.</p>
-      
+
       <div class="skills-list">
         <div class="skill-weight-item" *ngFor="let skill of skillWeights; let i = index" [ngClass]="{'skill-locked': skill.locked}">
           <div class="skill-weight-header">
@@ -125,10 +125,10 @@
           </div>
         </div>
       </div>
-      
+
       <div class="skills-footer">
         <button class="btn btn-primary" (click)="applyWeights()" [disabled]="loadingCandidates">
-          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
+          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
           {{ loadingCandidates ? 'Finding Matches...' : 'Apply Weights & Find Matches' }}
         </button>
       </div>
@@ -147,7 +147,7 @@
     </div>
     <div class="aspects-content">
       <p class="aspects-hint">Adjust the importance of each job aspect for candidate matching. The total weight will always be 100%.</p>
-      
+
       <div class="aspects-list">
         <div class="aspect-weight-item">
           <div class="aspect-weight-header">
@@ -160,7 +160,7 @@
             <p-slider [(ngModel)]="aspectWeights.keyResponsibilities" [min]="0" [max]="100" (onChange)="updateAspectWeight('keyResponsibilities')"></p-slider>
           </div>
         </div>
-        
+
         <div class="aspect-weight-item">
           <div class="aspect-weight-header">
             <span class="aspect-name">Required Qualifications</span>
@@ -172,7 +172,7 @@
             <p-slider [(ngModel)]="aspectWeights.requiredQualifications" [min]="0" [max]="100" (onChange)="updateAspectWeight('requiredQualifications')"></p-slider>
           </div>
         </div>
-        
+
         <div class="aspect-weight-item">
           <div class="aspect-weight-header">
             <span class="aspect-name">Preferred Skills</span>
@@ -184,7 +184,7 @@
             <p-slider [(ngModel)]="aspectWeights.preferredSkills" [min]="0" [max]="100" (onChange)="updateAspectWeight('preferredSkills')"></p-slider>
           </div>
         </div>
-        
+
         <div class="aspect-weight-item">
           <div class="aspect-weight-header">
             <span class="aspect-name">Company Overview</span>
@@ -197,10 +197,10 @@
           </div>
         </div>
       </div>
-      
+
       <div class="aspects-footer">
         <button class="btn btn-primary" (click)="applyWeights()" [disabled]="loadingCandidates">
-          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i> 
+          <i class="pi" [ngClass]="loadingCandidates ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
           {{ loadingCandidates ? 'Finding Matches...' : 'Apply Weights & Find Matches' }}
         </button>
       </div>

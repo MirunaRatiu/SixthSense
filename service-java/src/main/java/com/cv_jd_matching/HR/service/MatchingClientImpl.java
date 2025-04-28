@@ -1,19 +1,10 @@
 package com.cv_jd_matching.HR.service;
 
 import com.cv_jd_matching.HR.config.WebClientConfig;
-
-import com.cv_jd_matching.HR.dto.CvDTO;
-import com.cv_jd_matching.HR.dto.JobDescriptionDTO;
-import com.cv_jd_matching.HR.dto.MatchRequestDTO;
-import com.cv_jd_matching.HR.dto.MatchResponseDTO;
-import com.cv_jd_matching.HR.entity.Cv;
-import com.cv_jd_matching.HR.entity.JobDescription;
-
 import com.cv_jd_matching.HR.dto.*;
 import com.cv_jd_matching.HR.entity.Cv;
 import com.cv_jd_matching.HR.entity.JobDescription;
 import com.cv_jd_matching.HR.error.InputException;
-
 import com.cv_jd_matching.HR.error.WrongWeightsException;
 import com.cv_jd_matching.HR.mapper.CvMapper;
 import com.cv_jd_matching.HR.mapper.JobDescriptionMapper;
@@ -30,10 +21,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
-
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
 
 @Service
 @RequiredArgsConstructor
@@ -60,9 +49,7 @@ public class MatchingClientImpl implements MatchingClient{
         jobSkills.put("AWS", 10);
         jobSkills.put("Git", 10);
 
-
         MatchRequestDTO requestDTO = new MatchRequestDTO(cvId, jobDescriptionDTO, jobSkills);
-
 
         return webClient.post()
                 .uri("/match/aux")
@@ -87,7 +74,6 @@ public class MatchingClientImpl implements MatchingClient{
                 .bodyToMono(String.class);
     }
 
-
     public List<JobMatchResponseDTO> matchCv(Integer cvId) {
         List<JobDescription> jobDescriptions = StreamSupport
                 .stream(jobDescriptionRepository.findAll().spliterator(), false)
@@ -103,22 +89,19 @@ public class MatchingClientImpl implements MatchingClient{
                 .block();
         return result.stream()
                 .map(matchResponseDTO -> {
-                    try {
-                        return matchResponseMapper.mapMatchToJobDTO(matchResponseDTO);
-                    } catch (InputException e) {
-                        throw new RuntimeException(e);
-                    }
+                    JobDescription jobDescription = jobDescriptionRepository.findById(matchResponseDTO.getId())
+                            .orElseThrow(() -> new RuntimeException(new InputException("The Job Description with id " + matchResponseDTO.getId() + " was not found.")));
+                    JobDescriptionViewDTO jobDescriptionViewDTO = JobDescriptionMapper.mapEntityToViewDTO(jobDescription);
+                    return MatchResponseMapper.mapMatchToJobDTO(matchResponseDTO, jobDescriptionViewDTO);
                 })
                 .collect(Collectors.toList());
     }
 
     public List<CvMatchResponseDTO> matchJobDescription(Integer jdId, Map<String, Integer> additionalSkills) throws WrongWeightsException, InputException {
-
         String error = AdditionalSkillsValidator.validateWeights(additionalSkills);
         if(error != null){
             throw new WrongWeightsException(error);
         }
-
         Optional<JobDescription> jobDescription = jobDescriptionRepository.findById(jdId);
         if(jobDescription.isEmpty()){
             throw new InputException("BAD MATCHING INPUT!");
@@ -134,14 +117,12 @@ public class MatchingClientImpl implements MatchingClient{
                 .block();
         return result.stream()
                 .map(matchResponseDTO -> {
-                    try {
-                        return matchResponseMapper.mapMatchToCVDTO(matchResponseDTO);
-                    } catch (InputException e) {
-                        throw new RuntimeException(e);
-                    }
+                    Cv cv = cvRepository.findById(matchResponseDTO.getId())
+                            .orElseThrow(() -> new RuntimeException(new InputException("The CV with id " + matchResponseDTO.getId() + " was not found.")));
+                    CvViewDTO cvViewDTO = CvMapper.mapEntityToViewDTO(cv);
+                    return MatchResponseMapper.mapMatchToCVDTO(matchResponseDTO, cvViewDTO);
                 })
                 .collect(Collectors.toList());
-
     }
 
     public Mono<String> deleteCv(Integer cvId) {
