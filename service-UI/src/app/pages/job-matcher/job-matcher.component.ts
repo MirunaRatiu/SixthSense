@@ -16,6 +16,7 @@ import  { MatchingService } from "../../services/matching.service"
 import  { Candidate } from "../../models/candidate.model"
 import  { Job } from "../../models/job.model"
 import {JobMatchRequestPayload} from '../../models/JobMatchRequestPayload.model';
+// import {Dialog} from 'primeng/dialog';
 //import {CvMatchResponseDTO} from '../../models/CvMatchResponseDTO';
 //import {CvViewDTO} from '../../models/CvViewDTO'
 // Update the SkillWeight interface to include a locked property
@@ -46,6 +47,22 @@ export interface DisplayCandidate extends CvViewDTO {
 }
 
 
+
+
+export interface CvViewDTO {
+  name: string;
+  skills: string[] | null;
+  languages: string[] | null;
+  education: string | null;
+}
+
+export interface CvMatchResponseDTO {
+  score: number;
+  explanation: Record<string, string>;
+  cvViewDTO: CvViewDTO | null;
+}
+
+
 @Component({
   selector: "app-job-matcher",
   standalone: true,
@@ -61,24 +78,11 @@ export interface DisplayCandidate extends CvViewDTO {
     TagModule,
     SliderModule,
     ChipModule,
+    // Dialog,
   ],
   templateUrl: "./job-matcher.component.html",
   styleUrls: ["./job-matcher.component.css"],
 })
-
-export interface CvViewDTO {
-  name: string;
-  skills: string[] | null;
-  languages: string[] | null;
-  education: string | null;
-}
-
-export interface CvMatchResponseDTO {
-  score: number;
-  explanation: Record<string, string>;
-  cvViewDTO: CvViewDTO | null;
-}
-
 export class JobMatcherComponent implements OnInit {
   selectedJob: Job | null = null
   matchingCandidates: Candidate[] = []
@@ -131,7 +135,19 @@ export class JobMatcherComponent implements OnInit {
 
     // Puteți apela findMatches aici dacă doriți un matching inițial
     // (care va folosi ponderi zero sau logica implicită a backend-ului dacă skillWeights este goală)
-    this.findMatches()
+    this.extractJobAspectsImportance("")
+  }
+
+  private extractJobAspectsImportance(explanation: any): Record<string, string> {
+    if (!explanation) return {};
+
+    return {
+      industry_match: explanation.industry_match || '',
+      technical_match: explanation.technical_match || '',
+      certification_bonus: explanation.certification_bonus || '',
+      semantic_match: explanation.semantic_match || '',
+      total_score: explanation.total_score || '',
+    };
   }
 
   // *** MODIFIED findMatches function ***
@@ -139,7 +155,6 @@ export class JobMatcherComponent implements OnInit {
     this.loadingCandidates = true;
     this.error = null;
 
-    // 1. Check if a job is selected and has an ID
     if (!this.selectedJob || this.selectedJob.id === undefined || this.selectedJob.id === null) {
       console.error("Cannot find matches: No job selected or job ID is missing.");
       this.loadingCandidates = false;
@@ -147,8 +162,6 @@ export class JobMatcherComponent implements OnInit {
       return;
     }
 
-    // 2. Convert the user-defined skill weights (skillWeights array)
-    //    into the format expected by the backend DTO (additionalSkills)
     const additionalSkillsMap: Record<string, number> = this.skillWeights.reduce(
       (map, skill) => {
         map[skill.name] = Math.round(skill.weight);
@@ -157,26 +170,40 @@ export class JobMatcherComponent implements OnInit {
       {} as Record<string, number>
     );
 
-    // 3. Construct the payload object matching the backend's JobViewMatchDTO structure
     const requestPayload: JobViewMatchPayload = {
-      jdId: this.selectedJob.id, // Use the job ID
-      additionalSkills: additionalSkillsMap, // Use the skills map with the correct key name
-      // Add aspect weights here if the backend DTO and frontend interface were updated
-      // aspectWeights: this.aspectWeights // Assuming aspectWeights is Record<string, number> or similar
+      jdId: this.selectedJob.id,
+      additionalSkills: additionalSkillsMap,
     };
 
-    console.log("Component: Sending JSON Body Payload to Service:", JSON.stringify(requestPayload, null, 2)); // For debugging
+    console.log("Component: Sending JSON Body Payload to Service:", JSON.stringify(requestPayload, null, 2));
 
-    // 4. Call the matching service with the new payload object.
-    //    The MatchingService.findMatchingCandidates method needs to accept
-    //    the JobViewMatchPayload interface.
-    this.matchingService.findMatchingCandidates(requestPayload).subscribe({ // <-- Pass the new payload
-      next: (candidates) => {
-        if (candidates && Array.isArray(candidates)) {
-          this.matchingCandidates = candidates;
-          this.totalRecords = candidates.length;
+    this.matchingService.findMatchingCandidates(requestPayload).subscribe({
+      next: (response) => {
+        if (response && Array.isArray(response)) {
+          // Map the backend response to Candidate[] format
+          this.matchingCandidates = response.map(item => {
+            const cv = item["cvViewDTO"];
+
+            return {
+              id: cv.id,
+              name: cv.name,
+              skills: cv.skills || [],
+              languages: cv.languages || [],
+              education: cv.education || '',
+              certifications: cv.certifications || [],
+              project_experience: cv.project_experience || [],
+              work_experience: cv.work_experience || [],
+              others: cv.others || [],
+              score: item.score,
+              accessLink: cv.accessLink,
+              ...cv, // Optional: includes other unknown fields in cvViewDTO
+              explanation: item["explanation"] // Optional: keep explanation data
+            };
+          });
+
+          this.totalRecords = this.matchingCandidates.length;
         } else {
-          console.error("Invalid candidates data format received:", candidates);
+          console.error("Invalid candidates data format received:", response);
           this.error = "Received invalid data format from the server.";
           this.matchingCandidates = [];
           this.totalRecords = 0;
@@ -726,4 +753,20 @@ export class JobMatcherComponent implements OnInit {
       this.isAdjustingAspects = false
     }
   }
+
+
+
+  // explanationDialogVisible: boolean = false;
+  // selectedExplanationCandidate: any = null;
+  //
+  // showExplanationDialog(candidate: any): void {
+  //   this.selectedExplanationCandidate = candidate;
+  //   this.explanationDialogVisible = true;
+  // }
+  //
+  // closeExplanationDialog(): void {
+  //   this.selectedExplanationCandidate = null;
+  //   this.explanationDialogVisible = false;
+  // }
+
 }

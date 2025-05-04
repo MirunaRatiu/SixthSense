@@ -9,6 +9,7 @@ export interface Candidate {
   work_experience: string[]
   others: string[]
   matchScore: number
+  score: number
   accessLink?: string // Add the accessLink property
  // Any other fields that might be in the backend response
  [key: string]: any

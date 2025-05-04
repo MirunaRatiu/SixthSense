@@ -233,10 +233,10 @@
             Skills
             <i class="pi pi-sort"></i>
           </th>
-          <th class="sortable-col">
-            Education
-            <i class="pi pi-sort"></i>
-          </th>
+<!--          <th class="sortable-col">-->
+<!--            Education-->
+<!--            <i class="pi pi-sort"></i>-->
+<!--          </th>-->
           <th class="sortable-col">
             Languages
             <i class="pi pi-sort"></i>
@@ -257,7 +257,7 @@
             <span *ngIf="(candidate.skills || []).length > 1" class="skill-tag">+{{ (candidate.skills || []).length - 1 }}</span>
           </div>
         </td>
-        <td>{{ candidate.education }}</td>
+<!--        <td>{{ candidate.education }}</td>-->
         <td>
           <div class="candidate-skills">
             <span *ngFor="let lang of (candidate.languages || []) | slice:0:2" class="skill-tag">{{ lang }}</span>
@@ -266,12 +266,12 @@
         </td>
         <td>
           <div class="match-score-container">
-            <div class="match-score-bar" [style.width.%]="candidate.matchScore"></div>
+            <div class="match-score-bar" [style.width.%]="candidate.score"></div>
             <span class="match-score-value" [ngClass]="{
-              'match-score-high': candidate.matchScore >= 80,
-              'match-score-medium': candidate.matchScore >= 60 && candidate.matchScore < 80,
-              'match-score-low': candidate.matchScore < 60
-            }">{{ candidate.matchScore }}%</span>
+              'match-score-high': candidate.score >= 80,
+              'match-score-medium': candidate.score >= 60 && candidate.score < 80,
+              'match-score-low': candidate.score < 60
+            }">{{ candidate.score }}%</span>
           </div>
         </td>
         <td>
@@ -281,10 +281,19 @@
           <button class="btn btn-sm btn-primary">
             <i class="pi pi-envelope"></i> Contact
           </button>
+
+
         </td>
       </tr>
       </tbody>
     </table>
+    <!--{{matchingCandidates | json}}-->
+<!--    <p-dialog header="Candidate Explanation" [(visible)]="explanationDialogVisible" [modal]="true" [style]="{width: '500px'}" [closable]="true" (onHide)="closeExplanationDialog()">-->
+<!--      <ng-container *ngIf="selectedExplanationCandidate">-->
+<!--        <h3>{{ selectedExplanationCandidate.name }}</h3>-->
+<!--        <p>{{ selectedExplanationCandidate.explanation }}</p>-->
+<!--      </ng-container>-->
+<!--    </p-dialog>-->
   </div>
 
   <!-- No Results State -->
@@ -326,4 +335,5 @@
       {{ totalRecords }} total candidates
     </div>
   </div>
+
 </div>

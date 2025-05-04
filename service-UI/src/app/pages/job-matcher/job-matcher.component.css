@@ -346,7 +346,7 @@
 }
 
 .match-score-low {
-  color: var(--danger);
+  color: rgb(0, 0, 0);
 }
 
 /* Badge styles */
