@@ -15,6 +15,7 @@ import { Candidate } from "../../models/candidate.model";
 import { Job } from "../../models/job.model";
 // *** Add Observable import if not already implicitly available ***
 import { Observable } from 'rxjs';
+import {CrossOrigin} from '@angular-devkit/build-angular';
 
 // Interface for the data structure coming from the backend
 interface JobMatchResponseDTO {
@@ -92,10 +93,18 @@ export class CvMatcherComponent implements OnInit {
         next: (jobMatchResponses: JobMatchResponseDTO[]) => {
           // ... rest of your existing subscribe logic remains the same
           if (jobMatchResponses && Array.isArray(jobMatchResponses)) {
-            this.matchingJobs = jobMatchResponses.map((response): JobWithScore => ({
-              ...response.jobDescriptionViewDTO,
-              score: response.score,
-            }));
+            this.matchingJobs = jobMatchResponses.map((response): JobWithScore => {
+              const job = response.jobDescriptionViewDTO;
+              return {
+                ...job,
+                score: response.score,
+                requiredQualifications: Array.isArray(job.requiredQualifications)
+                  ? job.requiredQualifications
+                  : job.requiredQualifications
+                    ? [job.requiredQualifications]
+                    : []
+              };
+            });
             this.totalRecords = this.matchingJobs.length;
           } else {
             console.error("Invalid jobs data format:", jobMatchResponses);

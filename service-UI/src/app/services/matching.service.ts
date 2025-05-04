@@ -38,17 +38,29 @@ export class MatchingService {
       .pipe(catchError(this.handleError));
   }
 
-  findMatchingJobs(candidateId: number): Observable<Job[]> {
-    // Use HttpParams to add the cvId as a query parameter
-    const params = new HttpParams().set("cvId", candidateId.toString()) // <-- Aici se creează parametrii
+  // findMatchingJobs(candidateId: number): Observable<Job[]> {
+  //   // Use HttpParams to add the cvId as a query parameter
+  //   const params = new HttpParams().set("cvId", candidateId.toString()) // <-- Aici se creează parametrii
+  //
+  //   // Make a GET request to the endpoint with the query parameter
+  //   return this.http.post<Job[]>(`${this.apiUrl}/cv`, { params }).pipe( // <-- HttpClient.get folosește corect obiectul params
+  //     catchError((error) => {
+  //       console.error("Error finding matching jobs:", error)
+  //       return throwError(() => new Error("Failed to find matching jobs. Please try again."))
+  //     }),
+  //   )
+  // }
 
-    // Make a GET request to the endpoint with the query parameter
-    return this.http.get<Job[]>(`${this.apiUrl}/cv`, { params }).pipe( // <-- HttpClient.get folosește corect obiectul params
+
+  findMatchingJobs(candidateId: number): Observable<Job[]> {
+    const params = new HttpParams().set("cvId", candidateId.toString());
+
+    return this.http.post<Job[]>(`${this.apiUrl}/cv`, null, { params }).pipe(
       catchError((error) => {
-        console.error("Error finding matching jobs:", error)
-        return throwError(() => new Error("Failed to find matching jobs. Please try again."))
-      }),
-    )
+        console.error("Error finding matching jobs:", error);
+        return throwError(() => new Error("Failed to find matching jobs. Please try again."));
+      })
+    );
   }
 
   private handleError(error: any) {

@@ -2,7 +2,7 @@ export interface Job {
   id: number
   jobTitle?: string
   companyOverview?: string
-  requiredQualifications?: string
+  requiredQualifications?: string[]
   preferredSkills?: string[]
   benefits?: string[]
   message?: string
