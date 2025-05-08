@@ -1,4 +1,0 @@
-- copy the PyCharm project in this folder
-- git add .
-- git commit -m "added ..."
-- git push origin your_branch_name
